@@ -1,0 +1,269 @@
+<app-page-header title="Recent Activity" subtitle="Complete audit trail of all system events and user actions">
+  <div class="flex items-center gap-3">
+    <button (click)="exportCSV()"
+      class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
+      style="background:white;border:1px solid #e8ecf0;color:#64748b;cursor:pointer;"
+      onmouseover="this.style.background='#f8fafc';" onmouseout="this.style.background='white';">
+      <mat-icon style="font-size:16px;width:16px;height:16px;">file_download</mat-icon> Export Log
+    </button>
+  </div>
+</app-page-header>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- ROW 1 — KPI Cards                                                       -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+
+  <div class="rounded-2xl p-4 flex flex-col gap-2" style="background:linear-gradient(135deg,#16a34a,#059669);border:1px solid #15803d;">
+    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(255,255,255,0.2);">
+      <mat-icon style="font-size:18px;width:18px;height:18px;color:white;">history</mat-icon>
+    </div>
+    <div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-0.5" style="color:rgba(255,255,255,0.7);">Total Events</p>
+      <p class="font-display font-bold" style="font-size:24px;color:white;">{{ totalEvents }}</p>
+    </div>
+  </div>
+
+  <div class="rounded-2xl p-4 flex flex-col gap-2" style="background:white;border:1px solid #e8ecf0;">
+    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#f0fdf4;">
+      <mat-icon style="font-size:18px;width:18px;height:18px;color:#16a34a;">today</mat-icon>
+    </div>
+    <div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-0.5" style="color:#94a3b8;">Today</p>
+      <p class="font-display font-bold" style="font-size:24px;color:#0f172a;">{{ todayEvents }}</p>
+    </div>
+  </div>
+
+  <div class="rounded-2xl p-4 flex flex-col gap-2" style="background:white;border:1px solid #e8ecf0;">
+    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#f0fdf4;">
+      <mat-icon style="font-size:18px;width:18px;height:18px;color:#22c55e;">add_circle</mat-icon>
+    </div>
+    <div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-0.5" style="color:#94a3b8;">Created</p>
+      <p class="font-display font-bold" style="font-size:24px;color:#0f172a;">{{ createCount }}</p>
+    </div>
+  </div>
+
+  <div class="rounded-2xl p-4 flex flex-col gap-2" style="background:white;border:1px solid #e8ecf0;">
+    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#f0f9ff;">
+      <mat-icon style="font-size:18px;width:18px;height:18px;color:#0ea5e9;">edit</mat-icon>
+    </div>
+    <div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-0.5" style="color:#94a3b8;">Updated</p>
+      <p class="font-display font-bold" style="font-size:24px;color:#0f172a;">{{ updateCount }}</p>
+    </div>
+  </div>
+
+  <div class="rounded-2xl p-4 flex flex-col gap-2" style="background:white;border:1px solid #e8ecf0;">
+    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#fef2f2;">
+      <mat-icon style="font-size:18px;width:18px;height:18px;color:#ef4444;">delete</mat-icon>
+    </div>
+    <div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-0.5" style="color:#94a3b8;">Deleted</p>
+      <p class="font-display font-bold" style="font-size:24px;color:#0f172a;">{{ deleteCount }}</p>
+    </div>
+  </div>
+
+  <div class="rounded-2xl p-4 flex flex-col gap-2" style="background:white;border:1px solid #e8ecf0;">
+    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#f0fdf4;">
+      <mat-icon style="font-size:18px;width:18px;height:18px;color:#16a34a;">payments</mat-icon>
+    </div>
+    <div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-0.5" style="color:#94a3b8;">Payments</p>
+      <p class="font-display font-bold" style="font-size:24px;color:#0f172a;">{{ payCount }}</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- Activity Timeline Table                                                  -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="rounded-2xl" style="background:white;border:1px solid #e8ecf0;overflow:hidden;">
+
+  <!-- Controls -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5" style="border-bottom:1px solid #f0f4f8;">
+    <div>
+      <h3 class="font-display font-bold text-base" style="color:#0f172a;">Activity Log</h3>
+      <p class="text-xs mt-0.5" style="color:#94a3b8;">
+        {{ filteredLogs.length }} events · Page {{ currentPage + 1 }} of {{ totalPages }}
+      </p>
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+
+      <!-- Search -->
+      <div class="flex items-center gap-2 px-3 py-2 rounded-xl" style="background:#f8fafc;border:1px solid #e8ecf0;min-width:200px;">
+        <mat-icon style="font-size:15px;width:15px;height:15px;color:#94a3b8;">search</mat-icon>
+        <input type="text" placeholder="Search user, action, description…" [(ngModel)]="searchQuery" (ngModelChange)="onFilterChange()"
+          style="border:none;outline:none;font-size:13px;color:#374151;background:transparent;font-family:inherit;width:100%;" />
+      </div>
+
+      <!-- Type filter -->
+      <select [(ngModel)]="filterType" (ngModelChange)="onFilterChange()"
+        style="padding:8px 12px;border:1px solid #e8ecf0;border-radius:12px;font-size:13px;color:#374151;background:white;font-family:inherit;outline:none;cursor:pointer;">
+        <option value="all">All Types</option>
+        <option value="CREATE">Create</option>
+        <option value="UPDATE">Update</option>
+        <option value="DELETE">Delete</option>
+        <option value="PAID">Payment</option>
+        <option value="LOGIN">Login</option>
+        <option value="EXPORT">Export</option>
+        <option value="SYSTEM">System</option>
+      </select>
+
+      <!-- Role filter -->
+      <select [(ngModel)]="filterRole" (ngModelChange)="onFilterChange()"
+        style="padding:8px 12px;border:1px solid #e8ecf0;border-radius:12px;font-size:13px;color:#374151;background:white;font-family:inherit;outline:none;cursor:pointer;">
+        <option value="all">All Roles</option>
+        <option value="admin">Admin</option>
+        <option value="worker">Worker</option>
+      </select>
+
+      <!-- Entity filter -->
+      <select [(ngModel)]="filterEntity" (ngModelChange)="onFilterChange()"
+        style="padding:8px 12px;border:1px solid #e8ecf0;border-radius:12px;font-size:13px;color:#374151;background:white;font-family:inherit;outline:none;cursor:pointer;">
+        <option value="all">All Entities</option>
+        @for (e of uniqueEntities; track e) { <option [value]="e">{{ e }}</option> }
+      </select>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div style="overflow-x:auto;overflow-y:auto;max-height:480px;">
+    <table style="width:100%;border-collapse:collapse;">
+      <thead style="position:sticky;top:0;z-index:2;">
+        <tr style="background:#f8fafc;border-bottom:2px solid #e8ecf0;box-shadow:0 2px 4px rgba(0,0,0,0.06);">
+          <th style="text-align:left;padding:11px 16px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">Type</th>
+          <th style="text-align:left;padding:11px 16px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">User</th>
+          <th style="text-align:left;padding:11px 16px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">Description</th>
+          <th style="text-align:left;padding:11px 16px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">Entity</th>
+          <th style="text-align:left;padding:11px 16px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">Log ID</th>
+          <th style="text-align:left;padding:11px 16px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">IP Address</th>
+          <th style="text-align:left;padding:11px 16px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (log of pagedLogs; track log.id; let i = $index) {
+          <tr style="border-bottom:1px solid #f8fafc;transition:background 0.15s;"
+            onmouseover="this.style.background='#fafbfc';" onmouseout="this.style.background='white';">
+
+            <!-- Type badge -->
+            <td style="padding:12px 16px;white-space:nowrap;">
+              <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl w-fit"
+                [style.background]="typeBg(log.actionType)">
+                <mat-icon style="font-size:14px;width:14px;height:14px;" [style.color]="typeColor(log.actionType)">{{ typeIcon(log.actionType) }}</mat-icon>
+                <span class="text-xs font-semibold" [style.color]="typeColor(log.actionType)">{{ typeLabel(log.actionType) }}</span>
+              </div>
+            </td>
+
+            <!-- User -->
+            <td style="padding:12px 16px;white-space:nowrap;">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                  [style.background]="avatarBg(log.user.name, log.user.role)">
+                  {{ log.user.name.charAt(0) }}
+                </div>
+                <div>
+                  <div class="text-sm font-semibold" style="color:#0f172a;">{{ log.user.name }}</div>
+                  <div class="flex items-center gap-1 mt-0.5">
+                    <span class="text-xs px-1.5 py-0.5 rounded-full capitalize"
+                      [style.background]="log.user.role === 'admin' ? '#f0fdf4' : '#f0f9ff'"
+                      [style.color]="log.user.role === 'admin' ? '#16a34a' : '#0ea5e9'">
+                      {{ log.user.role }}
+                    </span>
+                    @if (log.user.department) {
+                      <span class="text-xs" style="color:#b0bac6;">{{ log.user.department }}</span>
+                    }
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            <!-- Description -->
+            <td style="padding:12px 16px;max-width:280px;">
+              <div>
+                <p class="text-sm" style="color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ log.description }}</p>
+                <p class="text-xs mt-0.5 font-mono" style="color:#b0bac6;">{{ log.action }}</p>
+              </div>
+            </td>
+
+            <!-- Entity -->
+            <td style="padding:12px 16px;white-space:nowrap;">
+              <div>
+                <div class="text-sm font-medium" style="color:#374151;">{{ log.entity }}</div>
+                <div class="text-xs font-mono" style="color:#b0bac6;">{{ log.entityId }}</div>
+              </div>
+            </td>
+
+            <!-- Log ID -->
+            <td style="padding:12px 16px;">
+              <span class="text-xs font-mono font-semibold px-2 py-1 rounded-lg" style="background:#f8fafc;color:#64748b;">{{ log.id }}</span>
+            </td>
+
+            <!-- IP -->
+            <td style="padding:12px 16px;white-space:nowrap;">
+              <div class="flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full" style="background:#cbd5e1;display:inline-block;"></span>
+                <span class="text-xs font-mono" style="color:#64748b;">{{ log.ip }}</span>
+              </div>
+            </td>
+
+            <!-- Time -->
+            <td style="padding:12px 16px;white-space:nowrap;">
+              <div>
+                <div class="text-xs font-semibold" style="color:#0f172a;">{{ relativeTime(log.timestamp) }}</div>
+                <div class="text-xs mt-0.5" style="color:#b0bac6;">{{ log.timestamp | date:'d MMM, h:mm a' }}</div>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="7" style="padding:48px;text-align:center;">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+                <mat-icon style="font-size:36px;width:36px;height:36px;color:#e2e8f0;">search_off</mat-icon>
+                <p style="font-size:14px;color:#94a3b8;">No activity matches your filters.</p>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="flex flex-wrap items-center justify-between gap-4 px-5 py-4" style="border-top:1px solid #f0f4f8;background:#fafbfc;">
+    <p class="text-xs" style="color:#64748b;">
+      Showing <strong style="color:#0f172a;">{{ currentPage * pageSize + 1 }}–{{ pageEndIndex }}</strong>
+      of <strong style="color:#0f172a;">{{ filteredLogs.length }}</strong> events
+    </p>
+    <div class="flex items-center gap-1.5">
+      <!-- Prev -->
+      <button (click)="currentPage = currentPage - 1" [disabled]="currentPage === 0"
+        class="flex items-center justify-center w-8 h-8 rounded-lg transition-colors"
+        [style.opacity]="currentPage === 0 ? '0.4' : '1'"
+        style="border:1px solid #e8ecf0;background:white;cursor:pointer;color:#64748b;"
+        onmouseover="this.style.background='#f8fafc';" onmouseout="this.style.background='white';">
+        <mat-icon style="font-size:16px;width:16px;height:16px;">chevron_left</mat-icon>
+      </button>
+
+      @for (p of pages; track p) {
+        @if (p < 6 || p === totalPages - 1 || (p >= currentPage - 1 && p <= currentPage + 1)) {
+          <button (click)="currentPage = p"
+            class="flex items-center justify-center w-8 h-8 rounded-lg text-xs font-semibold transition-colors"
+            [style.background]="p === currentPage ? '#16a34a' : 'white'"
+            [style.color]="p === currentPage ? 'white' : '#64748b'"
+            [style.border]="p === currentPage ? '1px solid #16a34a' : '1px solid #e8ecf0'"
+            style="cursor:pointer;">{{ p + 1 }}</button>
+        }
+      }
+
+      <!-- Next -->
+      <button (click)="currentPage = currentPage + 1" [disabled]="currentPage >= totalPages - 1"
+        class="flex items-center justify-center w-8 h-8 rounded-lg transition-colors"
+        [style.opacity]="currentPage >= totalPages - 1 ? '0.4' : '1'"
+        style="border:1px solid #e8ecf0;background:white;cursor:pointer;color:#64748b;"
+        onmouseover="this.style.background='#f8fafc';" onmouseout="this.style.background='white';">
+        <mat-icon style="font-size:16px;width:16px;height:16px;">chevron_right</mat-icon>
+      </button>
+    </div>
+  </div>
+</div>

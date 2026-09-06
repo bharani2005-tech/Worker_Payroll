@@ -1,0 +1,131 @@
+<app-page-header title="Notifications" subtitle="System alerts, payment updates and worker activity">
+  <div class="flex items-center gap-2">
+    @if (authService.isAdmin()) {
+      <button mat-stroked-button class="!rounded-lg !font-semibold" (click)="toggleAnnounce()">
+        <mat-icon>campaign</mat-icon>
+        New Announcement
+      </button>
+    }
+    @if (unreadCount() > 0) {
+      <button mat-flat-button color="primary" class="!rounded-lg !font-semibold" (click)="markAllRead()">
+        <mat-icon>done_all</mat-icon>
+        Mark all read
+      </button>
+    }
+  </div>
+</app-page-header>
+
+<!-- ── Admin: send announcement composer ───────────────────────────────── -->
+@if (announceOpen()) {
+  <div class="rounded-2xl p-5 mb-5" style="background: white; border: 1px solid #e8ecf0;">
+    <div class="flex items-center gap-2 mb-4">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#fffbeb;">
+        <mat-icon style="font-size:18px;width:18px;height:18px;color:#f59e0b;">campaign</mat-icon>
+      </div>
+      <div>
+        <h3 class="font-display font-bold text-sm" style="color:#0f172a;">Broadcast Announcement</h3>
+        <p class="text-xs" style="color:#94a3b8;">Sent instantly to every active worker</p>
+      </div>
+    </div>
+    <div class="flex flex-col gap-3">
+      <input
+        type="text"
+        [(ngModel)]="announceTitle"
+        placeholder="Announcement title"
+        class="px-3 py-2.5 rounded-lg text-sm w-full"
+        style="border: 1px solid #e2e8f0; outline: none;"
+      />
+      <textarea
+        [(ngModel)]="announceMessage"
+        placeholder="Write your message to all workers…"
+        rows="3"
+        class="px-3 py-2.5 rounded-lg text-sm w-full resize-none"
+        style="border: 1px solid #e2e8f0; outline: none;"
+      ></textarea>
+      @if (announceFeedback) {
+        <p class="text-xs font-medium" style="color:#16a34a;">{{ announceFeedback }}</p>
+      }
+      <div class="flex items-center gap-2 justify-end">
+        <button mat-stroked-button class="!rounded-lg" (click)="toggleAnnounce()">Cancel</button>
+        <button
+          mat-flat-button color="primary" class="!rounded-lg !font-semibold"
+          [disabled]="sending() || !announceTitle.trim() || !announceMessage.trim()"
+          (click)="sendAnnouncement()"
+        >
+          @if (sending()) {
+            <mat-spinner diameter="18" style="display:inline-block; margin-right:6px;"></mat-spinner>
+          } @else {
+            <mat-icon>send</mat-icon>
+          }
+          Send to All Workers
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Filter tabs ──────────────────────────────────────────────────────── -->
+<div class="flex items-center gap-2 mb-4">
+  <button
+    (click)="setFilter('all')"
+    class="px-3 py-1.5 rounded-lg text-sm font-medium"
+    [style.background]="activeFilter() === 'all' ? '#16a34a' : 'white'"
+    [style.color]="activeFilter() === 'all' ? 'white' : '#64748b'"
+    [style.border]="activeFilter() === 'all' ? '1px solid #16a34a' : '1px solid #e8ecf0'"
+    style="cursor:pointer;"
+  >All ({{ notifications().length }})</button>
+  <button
+    (click)="setFilter('unread')"
+    class="px-3 py-1.5 rounded-lg text-sm font-medium"
+    [style.background]="activeFilter() === 'unread' ? '#16a34a' : 'white'"
+    [style.color]="activeFilter() === 'unread' ? 'white' : '#64748b'"
+    [style.border]="activeFilter() === 'unread' ? '1px solid #16a34a' : '1px solid #e8ecf0'"
+    style="cursor:pointer;"
+  >Unread ({{ unreadCount() }})</button>
+</div>
+
+<!-- ── Notification list ───────────────────────────────────────────────── -->
+<div class="rounded-2xl overflow-hidden" style="background: white; border: 1px solid #e8ecf0;">
+  @if (loading()) {
+    <div class="flex items-center justify-center py-16">
+      <mat-spinner diameter="32"></mat-spinner>
+    </div>
+  } @else if (filteredNotifications().length === 0) {
+    <div class="flex flex-col items-center justify-center gap-3 py-16">
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background: #f0fdf4;">
+        <mat-icon style="font-size:28px;width:28px;height:28px;color:#16a34a;">notifications_none</mat-icon>
+      </div>
+      <p class="text-sm font-medium" style="color:#64748b;">
+        {{ activeFilter() === 'unread' ? "You're all caught up — no unread notifications." : 'No notifications yet.' }}
+      </p>
+    </div>
+  } @else {
+    <div class="divide-y" style="border-color:#f1f5f9;">
+      @for (n of filteredNotifications(); track n._id) {
+        <div
+          class="flex items-start gap-3 px-5 py-4 cursor-pointer transition-colors"
+          [style.background]="n.isRead ? 'white' : '#f8fffb'"
+          (click)="markRead(n)"
+        >
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" [style.background]="meta(n.type).bg">
+            <mat-icon [style.color]="meta(n.type).color" style="font-size:20px;width:20px;height:20px;">{{ meta(n.type).icon }}</mat-icon>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <p class="text-sm font-semibold" style="color:#0f172a;">{{ n.title }}</p>
+              @if (!n.isRead) {
+                <span class="w-2 h-2 rounded-full shrink-0" style="background:#16a34a;"></span>
+              }
+            </div>
+            <p class="text-sm mt-0.5" style="color:#64748b;">{{ n.message }}</p>
+            <p class="text-xs mt-1.5" style="color:#94a3b8;">{{ relativeTime(n.createdAt) }}</p>
+          </div>
+          <span
+            class="text-xs font-medium px-2 py-1 rounded-full capitalize shrink-0"
+            [style.color]="meta(n.type).color" [style.background]="meta(n.type).bg"
+          >{{ n.type.replace('_', ' ') }}</span>
+        </div>
+      }
+    </div>
+  }
+</div>

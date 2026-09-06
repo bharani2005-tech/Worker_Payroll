@@ -1,0 +1,494 @@
+<app-page-header title="Payroll" subtitle="Process, track and analyse worker payroll for {{ today | date: 'MMMM yyyy' }}">
+  <div class="flex items-center gap-3">
+    <!-- Month picker -->
+    <div class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm" style="background:white;border:1px solid #e8ecf0;color:#64748b;">
+      <mat-icon style="font-size:15px;width:15px;height:15px;">date_range</mat-icon>
+      <input type="month" [(ngModel)]="selectedMonth"
+        style="border:none;outline:none;font-size:13px;color:#374151;font-family:inherit;background:transparent;" />
+    </div>
+    <!-- Export -->
+    <button (click)="exportCSV()"
+      class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
+      style="background:white;border:1px solid #e8ecf0;color:#64748b;cursor:pointer;"
+      onmouseover="this.style.background='#f8fafc';" onmouseout="this.style.background='white';">
+      <mat-icon style="font-size:16px;width:16px;height:16px;">file_download</mat-icon> Export
+    </button>
+    <!-- Run Payroll -->
+    <button (click)="runPayroll()"
+      class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
+      style="background:#16a34a;color:white;border:none;cursor:pointer;"
+      onmouseover="this.style.background='#15803d';" onmouseout="this.style.background='#16a34a';">
+      <mat-icon style="font-size:16px;width:16px;height:16px;">play_circle</mat-icon> Run Payroll
+    </button>
+  </div>
+</app-page-header>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- ROW 1 — KPI Cards (8 cards, 2 rows)                                    -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+
+  <!-- Total Payroll -->
+  <div class="rounded-2xl p-4 flex flex-col gap-2" style="background:linear-gradient(135deg,#16a34a,#059669);border:1px solid #15803d;">
+    <div class="flex items-center justify-between">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(255,255,255,0.18);">
+        <mat-icon style="font-size:18px;width:18px;height:18px;color:white;">account_balance_wallet</mat-icon>
+      </div>
+      <span class="text-xs font-semibold px-2 py-0.5 rounded-full" style="background:rgba(255,255,255,0.2);color:white;">{{ today | date:'MMM yy' }}</span>
+    </div>
+    <div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:rgba(255,255,255,0.7);">Total Payroll</p>
+      <p class="font-display font-bold" style="font-size:22px;color:white;">₹{{ totalPayroll | number:'1.0-0' }}</p>
+      <p class="text-xs mt-0.5" style="color:rgba(255,255,255,0.7);">{{ allRecords().length }} workers</p>
+    </div>
+  </div>
+
+  <!-- Paid -->
+  <div class="rounded-2xl p-4 flex flex-col gap-2" style="background:white;border:1px solid #e8ecf0;">
+    <div class="flex items-center justify-between">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#f0fdf4;">
+        <mat-icon style="font-size:18px;width:18px;height:18px;color:#22c55e;">check_circle</mat-icon>
+      </div>
+      <span class="text-xs font-semibold" style="color:#22c55e;">{{ paidCount }} workers</span>
+    </div>
+    <div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:#94a3b8;">Paid</p>
+      <p class="font-display font-bold" style="font-size:22px;color:#0f172a;">₹{{ paidAmount | number:'1.0-0' }}</p>
+      <div style="height:4px;background:#f1f5f9;border-radius:9999px;margin-top:8px;">
+        <div style="height:100%;border-radius:9999px;background:#22c55e;" [style.width]="(paidAmount / totalPayroll * 100) + '%'"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending -->
+  <div class="rounded-2xl p-4 flex flex-col gap-2" style="background:white;border:1px solid #e8ecf0;">
+    <div class="flex items-center justify-between">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#fffbeb;">
+        <mat-icon style="font-size:18px;width:18px;height:18px;color:#f59e0b;">schedule</mat-icon>
+      </div>
+      <span class="text-xs font-semibold" style="color:#f59e0b;">{{ pendingCount }} workers</span>
+    </div>
+    <div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:#94a3b8;">Pending</p>
+      <p class="font-display font-bold" style="font-size:22px;color:#0f172a;">₹{{ pendingAmount | number:'1.0-0' }}</p>
+      <div style="height:4px;background:#f1f5f9;border-radius:9999px;margin-top:8px;">
+        <div style="height:100%;border-radius:9999px;background:#f59e0b;" [style.width]="(pendingAmount / totalPayroll * 100) + '%'"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Processing -->
+  <div class="rounded-2xl p-4 flex flex-col gap-2" style="background:white;border:1px solid #e8ecf0;">
+    <div class="flex items-center justify-between">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#f0f9ff;">
+        <mat-icon style="font-size:18px;width:18px;height:18px;color:#0ea5e9;">autorenew</mat-icon>
+      </div>
+      <span class="text-xs font-semibold" style="color:#0ea5e9;">{{ processingCount }} workers</span>
+    </div>
+    <div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:#94a3b8;">Processing</p>
+      <p class="font-display font-bold" style="font-size:22px;color:#0f172a;">₹{{ processingAmt | number:'1.0-0' }}</p>
+      <div style="height:4px;background:#f1f5f9;border-radius:9999px;margin-top:8px;">
+        <div style="height:100%;border-radius:9999px;background:#0ea5e9;" [style.width]="(processingAmt / totalPayroll * 100) + '%'"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+  <!-- Avg Salary -->
+  <div class="rounded-2xl p-4 flex flex-col gap-2" style="background:white;border:1px solid #e8ecf0;">
+    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#faf5ff;">
+      <mat-icon style="font-size:18px;width:18px;height:18px;color:#8b5cf6;">person</mat-icon>
+    </div>
+    <div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:#94a3b8;">Avg Salary</p>
+      <p class="font-display font-bold" style="font-size:22px;color:#0f172a;">₹{{ avgSalary | number:'1.0-0' }}</p>
+    </div>
+  </div>
+
+  <!-- Total Bonus -->
+  <div class="rounded-2xl p-4 flex flex-col gap-2" style="background:white;border:1px solid #e8ecf0;">
+    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#f0fdf4;">
+      <mat-icon style="font-size:18px;width:18px;height:18px;color:#16a34a;">stars</mat-icon>
+    </div>
+    <div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:#94a3b8;">Total Bonus</p>
+      <p class="font-display font-bold" style="font-size:22px;color:#0f172a;">₹{{ totalBonus | number:'1.0-0' }}</p>
+    </div>
+  </div>
+
+  <!-- Total Overtime -->
+  <div class="rounded-2xl p-4 flex flex-col gap-2" style="background:white;border:1px solid #e8ecf0;">
+    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#fffbeb;">
+      <mat-icon style="font-size:18px;width:18px;height:18px;color:#f59e0b;">access_time</mat-icon>
+    </div>
+    <div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:#94a3b8;">OT Pay</p>
+      <p class="font-display font-bold" style="font-size:22px;color:#0f172a;">₹{{ totalOT | number:'1.0-0' }}</p>
+    </div>
+  </div>
+
+  <!-- Total Deductions -->
+  <div class="rounded-2xl p-4 flex flex-col gap-2" style="background:white;border:1px solid #e8ecf0;">
+    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#fef2f2;">
+      <mat-icon style="font-size:18px;width:18px;height:18px;color:#ef4444;">remove_circle</mat-icon>
+    </div>
+    <div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:#94a3b8;">Deductions</p>
+      <p class="font-display font-bold" style="font-size:22px;color:#0f172a;">₹{{ totalDeductions | number:'1.0-0' }}</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- ROW 2 — Chart 1: Payroll Trend (wide) + Chart 2: Dept Doughnut        -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+
+  <!-- Chart 1: 12-month trend -->
+  <div class="lg:col-span-2 rounded-2xl p-5" style="background:white;border:1px solid #e8ecf0;">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="font-display font-bold text-base" style="color:#0f172a;">Payroll Trend</h3>
+        <p class="text-xs mt-0.5" style="color:#94a3b8;">12-month payroll vs deductions</p>
+      </div>
+      <div class="flex items-center gap-3 text-xs" style="color:#64748b;">
+        <span class="flex items-center gap-1.5"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#16a34a;"></span>Payroll</span>
+        <span class="flex items-center gap-1.5"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;"></span>Deductions</span>
+      </div>
+    </div>
+    <div style="height:240px;">
+      <canvas baseChart [data]="trendData" [options]="trendOpts" type="line"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart 2: Department doughnut -->
+  <div class="rounded-2xl p-5" style="background:white;border:1px solid #e8ecf0;">
+    <div class="mb-4">
+      <h3 class="font-display font-bold text-base" style="color:#0f172a;">By Department</h3>
+      <p class="text-xs mt-0.5" style="color:#94a3b8;">Net pay distribution</p>
+    </div>
+    <div style="height:160px;position:relative;" class="mb-4">
+      <canvas baseChart [data]="deptDonutData" [options]="deptDonutOpts" type="doughnut"></canvas>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+        <span class="font-display font-bold" style="font-size:16px;color:#0f172a;">₹{{ totalPayroll | number:'1.0-0' }}</span>
+        <span style="font-size:10px;color:#94a3b8;margin-top:2px;">Total</span>
+      </div>
+    </div>
+    <div class="flex flex-col" style="gap:5px;">
+      @for (dept of departments; track dept; let i = $index) {
+        <div class="flex items-center justify-between py-1" style="border-bottom:1px solid #f8fafc;">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full" [style.background]="['#16a34a','#0ea5e9','#8b5cf6','#f59e0b','#ef4444','#059669'][i]" style="display:inline-block;"></span>
+            <span class="text-xs" style="color:#64748b;">{{ dept }}</span>
+          </div>
+          <span class="text-xs font-semibold" style="color:#0f172a;">
+            ₹{{ getDeptTotal(dept) | number:'1.0-0' }}
+          </span>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- ROW 3 — Chart 3: Salary Components + Chart 4: Status                   -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+
+  <!-- Chart 3: Salary Components Stacked Bar -->
+  <div class="rounded-2xl p-5" style="background:white;border:1px solid #e8ecf0;">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="font-display font-bold text-base" style="color:#0f172a;">Salary Components</h3>
+        <p class="text-xs mt-0.5" style="color:#94a3b8;">Breakdown by department</p>
+      </div>
+    </div>
+    <div style="height:230px;">
+      <canvas baseChart [data]="compData" [options]="compOpts" type="bar"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart 4: Payment Status Horizontal Bar -->
+  <div class="rounded-2xl p-5" style="background:white;border:1px solid #e8ecf0;">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="font-display font-bold text-base" style="color:#0f172a;">Payment Status</h3>
+        <p class="text-xs mt-0.5" style="color:#94a3b8;">Amount by processing state</p>
+      </div>
+    </div>
+    <div style="height:230px;">
+      <canvas baseChart [data]="statusData" [options]="statusOpts" type="bar"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- ROW 4 — Chart 5: Monthly Growth (Full Width)                            -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="rounded-2xl p-5 mb-5" style="background:white;border:1px solid #e8ecf0;">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h3 class="font-display font-bold text-base" style="color:#0f172a;">Monthly Payroll Growth</h3>
+      <p class="text-xs mt-0.5" style="color:#94a3b8;">Total payroll processed each month (current month highlighted)</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="w-3 h-3 rounded-sm" style="background:#16a34a;display:inline-block;"></span>
+      <span class="text-xs" style="color:#64748b;">Current month</span>
+      <span class="w-3 h-3 rounded-sm" style="background:#dcfce7;display:inline-block;margin-left:8px;"></span>
+      <span class="text-xs" style="color:#64748b;">Previous</span>
+    </div>
+  </div>
+  <div style="height:180px;">
+    <canvas baseChart [data]="growthData" [options]="growthOpts" type="bar"></canvas>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- ROW 5 — Payroll Table                                                   -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="rounded-2xl" style="background:white;border:1px solid #e8ecf0;overflow:hidden;">
+
+  <!-- Table controls -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5" style="border-bottom:1px solid #f0f4f8;">
+    <div>
+      <h3 class="font-display font-bold text-base" style="color:#0f172a;">Payroll Register</h3>
+      <p class="text-xs mt-0.5" style="color:#94a3b8;">{{ filteredRecords.length }} of {{ allRecords().length }} records · Total: ₹{{ filteredNetTotal | number:'1.0-0' }}</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      <!-- Search -->
+      <div class="flex items-center gap-2 px-3 py-2 rounded-xl" style="background:#f8fafc;border:1px solid #e8ecf0;min-width:190px;">
+        <mat-icon style="font-size:15px;width:15px;height:15px;color:#94a3b8;">search</mat-icon>
+        <input type="text" placeholder="Name, ID, department…" [(ngModel)]="searchQuery"
+          style="border:none;outline:none;font-size:13px;color:#374151;background:transparent;font-family:inherit;width:100%;" />
+      </div>
+      <!-- Status filter -->
+      <select [(ngModel)]="filterStatus"
+        style="padding:8px 12px;border:1px solid #e8ecf0;border-radius:12px;font-size:13px;color:#374151;background:white;font-family:inherit;outline:none;cursor:pointer;">
+        <option value="all">All Status</option>
+        <option value="paid">Paid</option>
+        <option value="pending">Pending</option>
+        <option value="processing">Processing</option>
+        <option value="on-hold">On Hold</option>
+        <option value="failed">Failed</option>
+      </select>
+      <!-- Dept filter -->
+      <select [(ngModel)]="filterDept"
+        style="padding:8px 12px;border:1px solid #e8ecf0;border-radius:12px;font-size:13px;color:#374151;background:white;font-family:inherit;outline:none;cursor:pointer;">
+        <option value="all">All Departments</option>
+        @for (d of departments; track d) { <option [value]="d">{{ d }}</option> }
+      </select>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div style="overflow-x:auto;overflow-y:auto;max-height:480px;">
+    <table style="width:100%;border-collapse:collapse;">
+      <thead style="position:sticky;top:0;z-index:2;">
+        <tr style="background:#f8fafc;border-bottom:2px solid #e8ecf0;box-shadow:0 2px 4px rgba(0,0,0,0.06);">
+          <th style="text-align:left;padding:11px 14px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">Worker</th>
+          <th style="text-align:left;padding:11px 14px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">Pay ID</th>
+          <th style="text-align:left;padding:11px 14px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">Department</th>
+          <th style="text-align:right;padding:11px 14px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">Basic</th>
+          <th style="text-align:right;padding:11px 14px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">OT</th>
+          <th style="text-align:right;padding:11px 14px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">Bonus</th>
+          <th style="text-align:right;padding:11px 14px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">Deductions</th>
+          <th style="text-align:right;padding:11px 14px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">Net Pay</th>
+          <th style="text-align:left;padding:11px 14px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">Status</th>
+          <th style="text-align:left;padding:11px 14px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">Paid On</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of filteredRecords; track r.id; let i = $index) {
+          <tr style="border-bottom:1px solid #f8fafc;transition:background 0.15s;"
+            onmouseover="this.style.background='#fafbfc';" onmouseout="this.style.background='white';">
+
+            <!-- Worker -->
+            <td style="padding:11px 14px;white-space:nowrap;">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+                  [style.background]="avatarBg(i)">{{ r.avatar }}</div>
+                <div>
+                  <div class="text-sm font-semibold" style="color:#0f172a;">{{ r.name }}</div>
+                  <div class="text-xs" style="color:#94a3b8;">{{ r.designation }} · {{ r.daysWorked }}d</div>
+                </div>
+              </div>
+            </td>
+
+            <!-- Pay ID -->
+            <td style="padding:11px 14px;">
+              <div>
+                <span class="text-xs font-mono font-semibold px-2 py-1 rounded-lg" style="background:#f8fafc;color:#64748b;">{{ r.id }}</span>
+                <div class="text-xs mt-1" style="color:#b0bac6;">{{ r.bankAccount }}</div>
+              </div>
+            </td>
+
+            <!-- Department -->
+            <td style="padding:11px 14px;">
+              <span class="text-sm" style="color:#374151;">{{ r.department }}</span>
+            </td>
+
+            <!-- Basic -->
+            <td style="padding:11px 14px;text-align:right;">
+              <span class="text-sm font-semibold font-mono" style="color:#0f172a;">₹{{ r.basicSalary | number:'1.0-0' }}</span>
+            </td>
+
+            <!-- OT -->
+            <td style="padding:11px 14px;text-align:right;">
+              @if (r.overtime > 0) {
+                <span class="text-xs font-semibold font-mono px-2 py-0.5 rounded-full" style="background:#f0f9ff;color:#0ea5e9;">+₹{{ r.overtime | number:'1.0-0' }}</span>
+              } @else {
+                <span style="color:#cbd5e1;font-size:13px;">—</span>
+              }
+            </td>
+
+            <!-- Bonus -->
+            <td style="padding:11px 14px;text-align:right;">
+              @if (r.bonus > 0) {
+                <span class="text-xs font-semibold font-mono px-2 py-0.5 rounded-full" style="background:#faf5ff;color:#8b5cf6;">+₹{{ r.bonus | number:'1.0-0' }}</span>
+              } @else {
+                <span style="color:#cbd5e1;font-size:13px;">—</span>
+              }
+            </td>
+
+            <!-- Deductions -->
+            <td style="padding:11px 14px;text-align:right;">
+              <div>
+                <div class="text-xs font-semibold font-mono" style="color:#ef4444;">-₹{{ (r.deductions + r.tax) | number:'1.0-0' }}</div>
+                <div class="text-xs" style="color:#b0bac6;">Tax: ₹{{ r.tax | number:'1.0-0' }}</div>
+              </div>
+            </td>
+
+            <!-- Net Pay -->
+            <td style="padding:11px 14px;text-align:right;">
+              <span class="font-display font-bold font-mono" style="font-size:15px;color:#0f172a;">₹{{ r.netPay | number:'1.0-0' }}</span>
+            </td>
+
+            <!-- Status -->
+            <td style="padding:11px 14px;">
+              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full w-fit"
+                [style.background]="statusBg(r.status)" [style.color]="statusColor(r.status)">
+                <mat-icon style="font-size:13px;width:13px;height:13px;">{{ statusIcon(r.status) }}</mat-icon>
+                <span class="text-xs font-semibold">{{ statusLabel(r.status) }}</span>
+              </div>
+            </td>
+
+            <!-- Paid On -->
+            <td style="padding:11px 14px;">
+              @if (r.paidOn) {
+                <span class="text-xs" style="color:#64748b;">{{ r.paidOn | date:'d MMM yyyy' }}</span>
+              } @else {
+                <span class="text-xs" style="color:#cbd5e1;">—</span>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="10" style="padding:48px;text-align:center;">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+                <mat-icon style="font-size:36px;width:36px;height:36px;color:#e2e8f0;">search_off</mat-icon>
+                <p style="font-size:14px;color:#94a3b8;">No payroll records match your filters.</p>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex flex-wrap items-center justify-between gap-4 px-5 py-4" style="border-top:1px solid #f0f4f8;background:#fafbfc;">
+    <div class="flex flex-wrap gap-5 text-xs" style="color:#64748b;">
+      <span>Showing <strong style="color:#0f172a;">{{ filteredRecords.length }}</strong> records</span>
+      <span>Net Total: <strong style="color:#16a34a;">₹{{ filteredNetTotal | number:'1.0-0' }}</strong></span>
+      <span>Paid: <strong style="color:#22c55e;">{{ paidCount }}</strong></span>
+      <span>Pending: <strong style="color:#f59e0b;">{{ pendingCount }}</strong></span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="text-xs px-3 py-1 rounded-full font-semibold" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;">
+        {{ (paidAmount / totalPayroll * 100) | number:'1.0-0' }}% Disbursed
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- Run Payroll Modal                                                        -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+@if (showRunModal) {
+  <div
+    class="fixed inset-0 flex items-center justify-center z-50"
+    style="background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);"
+    (click)="showRunModal = runStep === 3 ? false : showRunModal"
+  >
+    <div class="rounded-2xl p-8 w-full max-w-md flex flex-col gap-5" style="background:white;box-shadow:0 25px 60px rgba(0,0,0,0.15);" (click)="$event.stopPropagation()">
+
+      @if (runStep === 1) {
+        <!-- Confirm -->
+        <div class="flex flex-col items-center gap-4 text-center">
+          <div class="w-16 h-16 rounded-2xl flex items-center justify-center" style="background:#f0fdf4;">
+            <mat-icon style="font-size:32px;width:32px;height:32px;color:#16a34a;">play_circle</mat-icon>
+          </div>
+          <div>
+            <h2 class="font-display font-bold text-xl mb-2" style="color:#0f172a;">Run Payroll</h2>
+            <p class="text-sm" style="color:#64748b;">This will process payments for <strong style="color:#0f172a;">{{ pendingCount }} pending workers</strong> totalling <strong style="color:#16a34a;">₹{{ pendingAmount | number:'1.0-0' }}</strong>.</p>
+          </div>
+          <!-- Summary boxes -->
+          <div class="grid grid-cols-3 gap-3 w-full">
+            <div class="rounded-xl p-3 text-center" style="background:#f8fafc;border:1px solid #e8ecf0;">
+              <div class="text-lg font-bold font-display" style="color:#0f172a;">{{ pendingCount }}</div>
+              <div class="text-xs" style="color:#94a3b8;">Workers</div>
+            </div>
+            <div class="rounded-xl p-3 text-center" style="background:#f0fdf4;border:1px solid #bbf7d0;">
+              <div class="text-lg font-bold font-display" style="color:#16a34a;">₹{{ pendingAmount | number:'1.0-0' }}</div>
+              <div class="text-xs" style="color:#94a3b8;">Amount</div>
+            </div>
+            <div class="rounded-xl p-3 text-center" style="background:#f8fafc;border:1px solid #e8ecf0;">
+              <div class="text-lg font-bold font-display" style="color:#0f172a;">{{ today | date:'MMM yy' }}</div>
+              <div class="text-xs" style="color:#94a3b8;">Period</div>
+            </div>
+          </div>
+          <div class="flex gap-3 w-full">
+            <button (click)="showRunModal=false" class="flex-1 py-2.5 rounded-xl text-sm font-semibold" style="background:#f8fafc;color:#64748b;border:1px solid #e8ecf0;cursor:pointer;">Cancel</button>
+            <button (click)="confirmRunPayroll()" class="flex-1 py-2.5 rounded-xl text-sm font-semibold" style="background:#16a34a;color:white;border:none;cursor:pointer;">Confirm & Process</button>
+          </div>
+        </div>
+      }
+
+      @if (runStep === 2) {
+        <!-- Processing spinner -->
+        <div class="flex flex-col items-center gap-4 text-center py-4">
+          <div class="w-16 h-16 rounded-full flex items-center justify-center" style="background:#f0fdf4;animation:spin 1.5s linear infinite;">
+            <mat-icon style="font-size:28px;width:28px;height:28px;color:#16a34a;">autorenew</mat-icon>
+          </div>
+          <h2 class="font-display font-bold text-xl" style="color:#0f172a;">Processing…</h2>
+          <p class="text-sm" style="color:#64748b;">Disbursing salaries to {{ pendingCount }} workers. Please wait.</p>
+          <div style="width:100%;height:6px;background:#f1f5f9;border-radius:9999px;overflow:hidden;">
+            <div style="height:100%;background:linear-gradient(90deg,#16a34a,#22c55e);border-radius:9999px;animation:progress 2.5s ease-out forwards;width:0%;"></div>
+          </div>
+        </div>
+      }
+
+      @if (runStep === 3) {
+        <!-- Done -->
+        <div class="flex flex-col items-center gap-4 text-center">
+          <div class="w-16 h-16 rounded-full flex items-center justify-center" style="background:#f0fdf4;">
+            <mat-icon style="font-size:32px;width:32px;height:32px;color:#22c55e;">check_circle</mat-icon>
+          </div>
+          <div>
+            <h2 class="font-display font-bold text-xl mb-1" style="color:#0f172a;">Payroll Initiated!</h2>
+            <p class="text-sm" style="color:#64748b;">{{ pendingCount }} workers are now in <strong style="color:#0ea5e9;">Processing</strong> state. Payments will settle within 1–2 business days.</p>
+          </div>
+          <button (click)="showRunModal=false" class="w-full py-2.5 rounded-xl text-sm font-semibold" style="background:#16a34a;color:white;border:none;cursor:pointer;">Done</button>
+        </div>
+      }
+
+    </div>
+  </div>
+}
+
+<style>
+  @keyframes spin     { to { transform: rotate(360deg); } }
+  @keyframes progress { to { width: 100%; } }
+</style>

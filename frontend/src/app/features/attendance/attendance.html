@@ -1,0 +1,295 @@
+<app-page-header title="Attendance" subtitle="Monitor daily workforce attendance from real work records">
+  <div class="flex items-center gap-3">
+    <!-- Date picker -->
+    <div class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm" style="background: var(--bg-surface); border: 1px solid var(--border-color); color: var(--text-secondary);">
+      <mat-icon style="font-size:15px;width:15px;height:15px;">calendar_today</mat-icon>
+      <input
+        type="date"
+        [(ngModel)]="selectedDate"
+        (change)="onDateChange()"
+        style="border:none;outline:none;font-size:13px;color:var(--text-primary);font-family:inherit;background:transparent;"
+      />
+    </div>
+    <!-- Export -->
+    <button
+      (click)="exportCSV()"
+      class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+      style="background: #16a34a; color: white; border: none; cursor: pointer;"
+      onmouseover="this.style.background='#15803d';"
+      onmouseout="this.style.background='#16a34a';"
+    >
+      <mat-icon style="font-size:16px;width:16px;height:16px;">file_download</mat-icon>
+      Export CSV
+    </button>
+  </div>
+</app-page-header>
+
+<!-- ══════════════════════ LOADING ══════════════════════ -->
+@if (loading()) {
+  <div class="flex flex-col items-center justify-center gap-4" style="min-height: 300px;">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p style="color: var(--text-muted); font-size: 14px;">Loading attendance data…</p>
+  </div>
+}
+
+<!-- ══════════════════════ ERROR ══════════════════════ -->
+@if (!loading() && error()) {
+  <div class="flex items-center gap-3 rounded-2xl p-5 mb-6" style="background: #fee2e2; border: 1px solid #fca5a5;">
+    <mat-icon style="color: #ef4444;">error_outline</mat-icon>
+    <span style="color: #dc2626; font-size: 14px; font-weight: 500;">{{ error() }}</span>
+  </div>
+}
+
+<!-- ══════════════════════ CONTENT ══════════════════════ -->
+@if (!loading() && !error()) {
+
+  <!-- ── KPI Cards ──────────────────────────────────────────────────────── -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+
+    <!-- Total Workers -->
+    <div class="rounded-2xl p-4 flex flex-col gap-3" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#eff6ff;">
+        <mat-icon style="font-size:18px;width:18px;height:18px;color:#3b82f6;">groups</mat-icon>
+      </div>
+      <div>
+        <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:var(--text-muted);">Total Workers</p>
+        <p class="font-display font-bold" style="font-size:26px;color:var(--text-primary);">{{ totalWorkers() }}</p>
+      </div>
+    </div>
+
+    <!-- Present -->
+    <div class="rounded-2xl p-4 flex flex-col gap-3" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#f0fdf4;">
+        <mat-icon style="font-size:18px;width:18px;height:18px;color:#22c55e;">check_circle</mat-icon>
+      </div>
+      <div>
+        <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:var(--text-muted);">Present</p>
+        <p class="font-display font-bold" style="font-size:26px;color:var(--text-primary);">{{ presentCount() }}</p>
+      </div>
+    </div>
+
+    <!-- Absent -->
+    <div class="rounded-2xl p-4 flex flex-col gap-3" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#fef2f2;">
+        <mat-icon style="font-size:18px;width:18px;height:18px;color:#ef4444;">cancel</mat-icon>
+      </div>
+      <div>
+        <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:var(--text-muted);">Absent</p>
+        <p class="font-display font-bold" style="font-size:26px;color:var(--text-primary);">{{ absentCount() }}</p>
+      </div>
+    </div>
+
+    <!-- Attendance Rate -->
+    <div class="rounded-2xl p-4 flex flex-col gap-3" style="background: linear-gradient(135deg,#16a34a,#059669); border:none;">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:rgba(255,255,255,0.2);">
+        <mat-icon style="font-size:18px;width:18px;height:18px;color:white;">trending_up</mat-icon>
+      </div>
+      <div>
+        <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:rgba(255,255,255,0.75);">Rate</p>
+        <p class="font-display font-bold" style="font-size:26px;color:white;">{{ attendanceRate() }}%</p>
+        <!-- Rate bar -->
+        <div class="rounded-full mt-2 overflow-hidden" style="height:4px;background:rgba(255,255,255,0.3);">
+          <div class="h-full rounded-full" style="background:white;transition:width 0.6s ease;" [style.width]="attendanceRate() + '%'"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Charts Row ──────────────────────────────────────────────────────── -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+
+    <!-- Department Attendance Bar -->
+    <div class="lg:col-span-2 rounded-2xl p-5" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="font-display font-bold text-sm" style="color:var(--text-primary);">Department Attendance</h3>
+          <p class="text-xs mt-0.5" style="color:var(--text-muted);">Present vs absent by department</p>
+        </div>
+        <div class="flex items-center gap-3 text-xs font-medium" style="color:var(--text-secondary);">
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm inline-block" style="background:#22c55e;"></span>Present</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm inline-block" style="background:#ef4444;"></span>Absent</span>
+        </div>
+      </div>
+      <div style="height:220px;">
+        <canvas baseChart [data]="deptData" [options]="deptOptions" type="bar"></canvas>
+      </div>
+    </div>
+
+    <!-- Donut Status -->
+    <div class="rounded-2xl p-5" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+      <div class="mb-4">
+        <h3 class="font-display font-bold text-sm" style="color:var(--text-primary);">Today's Status</h3>
+        <p class="text-xs mt-0.5" style="color:var(--text-muted);">{{ today | date:'MMMM d, yyyy' }}</p>
+      </div>
+      <div style="height:160px;position:relative;" class="mb-4">
+        <canvas baseChart [data]="donutData" [options]="donutOptions" type="doughnut"></canvas>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+          <span class="font-display font-bold" style="font-size:22px;color:var(--text-primary);">{{ attendanceRate() }}%</span>
+          <span style="font-size:10px;color:var(--text-muted);margin-top:2px;">Attendance</span>
+        </div>
+      </div>
+      <!-- Legend -->
+      <div class="flex flex-col gap-2">
+        <div class="flex items-center justify-between py-1" style="border-bottom:1px solid var(--border-light);">
+          <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#22c55e;"></span><span class="text-xs" style="color:var(--text-secondary);">Present</span></div>
+          <span class="text-xs font-semibold" style="color:var(--text-primary);">{{ presentCount() }}</span>
+        </div>
+        <div class="flex items-center justify-between py-1">
+          <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#ef4444;"></span><span class="text-xs" style="color:var(--text-secondary);">Absent</span></div>
+          <span class="text-xs font-semibold" style="color:var(--text-primary);">{{ absentCount() }}</span>
+        </div>
+      </div>
+      <!-- Earnings for the day -->
+      <div class="rounded-xl p-3 mt-3 text-center" style="background:var(--bg-surface-2);">
+        <p class="text-xs" style="color:var(--text-muted);">Today's Earnings</p>
+        <p class="font-display font-bold" style="font-size:16px;color:#16a34a;">{{ totalEarnings() | currency:'INR':'symbol':'1.0-0' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Earnings by Department ─────────────────────────────────────────── -->
+  <div class="rounded-2xl p-5 mb-5" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="font-display font-bold text-sm" style="color:var(--text-primary);">Earnings by Department</h3>
+        <p class="text-xs mt-0.5" style="color:var(--text-muted);">Total earnings generated today per department</p>
+      </div>
+    </div>
+    <div style="height:200px;">
+      <canvas baseChart [data]="earningsData" [options]="earningsOptions" type="bar"></canvas>
+    </div>
+  </div>
+
+  <!-- ── Attendance Table ────────────────────────────────────────────────── -->
+  <div class="rounded-2xl overflow-hidden" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+
+    <!-- Filters -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5" style="border-bottom: 1px solid var(--border-light);">
+      <div>
+        <h3 class="font-display font-bold text-sm" style="color:var(--text-primary);">Worker Attendance Log</h3>
+        <p class="text-xs mt-0.5" style="color:var(--text-muted);">{{ filteredRecords().length }} of {{ totalWorkers() }} workers shown</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Search -->
+        <div class="flex items-center gap-2 px-3 py-2 rounded-xl" style="background:var(--bg-surface-2);border:1px solid var(--border-color);min-width:190px;">
+          <mat-icon style="font-size:15px;width:15px;height:15px;color:var(--text-muted);">search</mat-icon>
+          <input type="text" placeholder="Search name, code, dept…" [value]="searchQuery()"
+            (input)="searchQuery.set($any($event.target).value)"
+            style="border:none;outline:none;font-size:13px;color:var(--text-primary);background:transparent;font-family:inherit;width:100%;" />
+        </div>
+        <!-- Status filter -->
+        <select [value]="filterStatus()" (change)="filterStatus.set($any($event.target).value)"
+          style="padding:8px 12px;border:1px solid var(--border-color);border-radius:12px;font-size:13px;color:var(--text-primary);background:var(--bg-surface);font-family:inherit;outline:none;cursor:pointer;">
+          <option value="all">All Status</option>
+          <option value="present">Present</option>
+          <option value="absent">Absent</option>
+        </select>
+        <!-- Department filter -->
+        <select [value]="filterDept()" (change)="filterDept.set($any($event.target).value)"
+          style="padding:8px 12px;border:1px solid var(--border-color);border-radius:12px;font-size:13px;color:var(--text-primary);background:var(--bg-surface);font-family:inherit;outline:none;cursor:pointer;">
+          <option value="all">All Departments</option>
+          @for (d of departments(); track d) {
+            <option [value]="d">{{ d }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div style="overflow-x:auto;overflow-y:auto;max-height:420px;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead style="position:sticky;top:0;z-index:2;">
+          <tr style="border-bottom:2px solid var(--border-light);box-shadow:0 2px 4px rgba(0,0,0,0.06);">
+            <th style="text-align:left;padding:11px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;background:var(--bg-surface);">Worker</th>
+            <th style="text-align:left;padding:11px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;background:var(--bg-surface);">Emp Code</th>
+            <th style="text-align:left;padding:11px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;background:var(--bg-surface);">Department</th>
+            <th style="text-align:left;padding:11px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;background:var(--bg-surface);">Status</th>
+            <th style="text-align:right;padding:11px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;background:var(--bg-surface);">Work Hrs</th>
+            <th style="text-align:right;padding:11px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;background:var(--bg-surface);">Tasks</th>
+            <th style="text-align:right;padding:11px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;background:var(--bg-surface);">Earnings</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of filteredRecords(); track r.workerId; let i = $index) {
+            <tr style="border-bottom:1px solid var(--border-light);"
+              [style.background]="i % 2 === 0 ? 'transparent' : 'var(--bg-surface-2)'">
+              <!-- Worker -->
+              <td style="padding:12px 16px;white-space:nowrap;">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                    [style.background]="avatarBg(i)">{{ r.name.charAt(0) }}</div>
+                  <div>
+                    <div class="text-sm font-semibold" style="color:var(--text-primary);">{{ r.name }}</div>
+                    <div class="text-xs" style="color:var(--text-muted);">{{ r.designation }}</div>
+                  </div>
+                </div>
+              </td>
+              <!-- Emp Code -->
+              <td style="padding:12px 16px;">
+                <span class="text-xs font-mono font-semibold px-2 py-1 rounded-lg" style="background:var(--bg-surface-2);color:var(--text-secondary);">{{ r.employeeCode }}</span>
+              </td>
+              <!-- Department -->
+              <td style="padding:12px 16px;">
+                <span class="text-sm" style="color:var(--text-secondary);">{{ r.department }}</span>
+              </td>
+              <!-- Status -->
+              <td style="padding:12px 16px;">
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full"
+                  [style.background]="statusBg(r.status)"
+                  [style.color]="statusColor(r.status)">{{ statusLabel(r.status) }}</span>
+              </td>
+              <!-- Work Hours -->
+              <td style="padding:12px 16px;text-align:right;">
+                @if (r.workHours > 0) {
+                  <div class="flex flex-col items-end gap-1">
+                    <span class="text-sm font-semibold" style="color:var(--text-primary);">{{ r.workHours }}h</span>
+                    <div style="width:48px;height:4px;background:var(--border-color);border-radius:9999px;">
+                      <div style="height:100%;border-radius:9999px;transition:width 0.3s;"
+                        [style.width]="(r.workHours / 10 * 100) + '%'"
+                        [style.background]="r.workHours >= 8 ? '#22c55e' : '#f59e0b'"></div>
+                    </div>
+                  </div>
+                } @else {
+                  <span style="color:var(--text-muted);">—</span>
+                }
+              </td>
+              <!-- Tasks -->
+              <td style="padding:12px 16px;text-align:right;">
+                <span class="text-sm" style="color:var(--text-secondary);">{{ r.taskCount || '—' }}</span>
+              </td>
+              <!-- Earnings -->
+              <td style="padding:12px 16px;text-align:right;">
+                @if (r.earnings > 0) {
+                  <span class="text-sm font-bold" style="color:#16a34a;">{{ r.earnings | currency:'INR':'symbol':'1.0-0' }}</span>
+                } @else {
+                  <span style="color:var(--text-muted);">—</span>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" style="padding:48px;text-align:center;">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+                  <mat-icon style="font-size:36px;width:36px;height:36px;color:var(--text-muted);">search_off</mat-icon>
+                  <p style="font-size:14px;color:var(--text-muted);">No records match your filters.</p>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex flex-wrap items-center justify-between gap-4 px-5 py-4" style="border-top:1px solid var(--border-light);background:var(--bg-surface-2);">
+      <div class="flex flex-wrap gap-4 text-xs" style="color:var(--text-secondary);">
+        <span>Showing <strong style="color:var(--text-primary);">{{ filteredRecords().length }}</strong> workers</span>
+        <span>Today's earnings: <strong style="color:#16a34a;">{{ totalEarnings() | currency:'INR':'symbol':'1.0-0' }}</strong></span>
+      </div>
+      <span class="text-xs px-2.5 py-1 rounded-full font-semibold" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;">
+        {{ attendanceRate() }}% Attendance Rate
+      </span>
+    </div>
+  </div>
+
+}

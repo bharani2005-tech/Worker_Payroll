@@ -1,0 +1,87 @@
+<div class="bg-white">
+  <!-- Hero -->
+  <section class="relative min-h-screen overflow-hidden"
+    style="background: radial-gradient(ellipse at top, #0f1b3d, #0b1120 70%);">
+    <canvas #sceneCanvas class="absolute inset-0 w-full h-full"></canvas>
+
+    <nav class="relative z-10 flex items-center justify-between px-6 sm:px-10 h-20">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center font-display font-bold text-white">W
+        </div>
+        <span class="font-display font-bold text-white tracking-tight">WorkerPay Pro</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <a routerLink="/auth/login" class="text-sm font-medium text-white/80 hover:text-white">Sign in</a>
+        <a routerLink="/auth/register" mat-flat-button color="primary" class="!rounded-lg !font-semibold">Get
+          started</a>
+      </div>
+    </nav>
+
+    <div class="relative z-10 flex flex-col items-center text-center px-6 pt-20 sm:pt-28 pointer-events-none">
+      <p class="hero-fade text-xs font-semibold tracking-[0.2em] uppercase text-cyan-300 mb-4">Workforce &amp; Payroll,
+        Unified</p>
+      <h1 class="hero-fade font-display text-4xl sm:text-6xl font-extrabold text-white leading-[1.05] max-w-3xl">
+        Pay every worker right, on time, every time.
+      </h1>
+      <p class="hero-fade text-white/70 text-base sm:text-lg max-w-xl mt-6 leading-relaxed">
+        Track daily work, auto-calculate earnings, and manage payroll for your entire
+        workforce — built for teams who pay by the day or by the task.
+      </p>
+      <div class="hero-fade flex items-center gap-3 mt-8 pointer-events-auto">
+        <a routerLink="/auth/login" mat-flat-button color="primary"
+          class="!h-12 !px-6 !rounded-lg !font-semibold !text-base">
+          Start free
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feature strip -->
+  <section class="px-6 sm:px-10 py-20 max-w-6xl mx-auto">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
+      <div>
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
+          style="background: #2563eb1a; color: var(--brand-primary);">
+          <span class="font-display font-bold">01</span>
+        </div>
+        <h3 class="font-display font-bold text-lg text-slate-900 mb-2">Record work daily</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">
+          Log tasks or hours per worker. Earnings calculate automatically based on daily or
+          per-task rates — no spreadsheets required.
+        </p>
+      </div>
+      <div>
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
+          style="background: #06b6d41a; color: var(--brand-secondary);">
+          <span class="font-display font-bold">02</span>
+        </div>
+        <h3 class="font-display font-bold text-lg text-slate-900 mb-2">Generate payroll</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">
+          Roll up any date range into a payroll record per worker, track what's paid versus
+          pending, and export reports in PDF, Excel, or CSV.
+        </p>
+      </div>
+      <div>
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
+          style="background: #8b5cf61a; color: var(--brand-accent);">
+          <span class="font-display font-bold">03</span>
+        </div>
+        <h3 class="font-display font-bold text-lg text-slate-900 mb-2">See it all at a glance</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">
+          Live dashboards for admins and workers alike — earnings trends, productivity,
+          and payment status, always up to date.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-100 px-6 sm:px-10 py-8 flex items-center justify-between text-sm text-slate-400">
+    <span>© 2026 WorkerPay Pro</span>
+    <div class="flex items-center gap-2">
+      <div class="w-6 h-6 rounded flex items-center justify-center font-display font-bold text-white text-xs"
+        style="background: var(--brand-primary);">W</div>
+      <span class="font-medium text-slate-500">WorkerPay Pro</span>
+    </div>
+  </footer>
+</div>

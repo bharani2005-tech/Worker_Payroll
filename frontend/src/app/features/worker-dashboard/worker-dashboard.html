@@ -1,0 +1,268 @@
+<app-page-header title="My Dashboard" subtitle="Your work history, earnings, and payment status"></app-page-header>
+
+<!-- ══════════════════════ LOADING ══════════════════════ -->
+@if (loading()) {
+  <div class="flex flex-col items-center justify-center gap-4" style="min-height: 300px;">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p style="color: var(--text-muted); font-size: 14px;">Loading your dashboard…</p>
+  </div>
+}
+
+<!-- ══════════════════════ ERROR ══════════════════════ -->
+@if (!loading() && error()) {
+  <div class="flex items-center gap-3 rounded-2xl p-5 mb-6" style="background: #fee2e2; border: 1px solid #fca5a5;">
+    <mat-icon style="color: #ef4444;">error_outline</mat-icon>
+    <span style="color: #dc2626; font-size: 14px; font-weight: 500;">{{ error() }}</span>
+  </div>
+}
+
+<!-- ══════════════════════ CONTENT ══════════════════════ -->
+@if (!loading() && !error() && data()) {
+
+  <!-- ── Section 1: KPI Cards ───────────────────────────────────────────── -->
+  <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+
+    <!-- Days Worked -->
+    <div class="rounded-2xl p-5" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style="background: #eff6ff;">
+        <mat-icon style="font-size: 20px; width: 20px; height: 20px; color: #3b82f6;">calendar_month</mat-icon>
+      </div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color: var(--text-muted);">Days Worked</p>
+      <p class="font-display font-bold" style="font-size: 28px; color: var(--text-primary); line-height: 1;">
+        {{ data()!.cards.totalDaysWorked }}
+      </p>
+    </div>
+
+    <!-- Tasks Completed -->
+    <div class="rounded-2xl p-5" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style="background: #f0fdf4;">
+        <mat-icon style="font-size: 20px; width: 20px; height: 20px; color: #16a34a;">checklist</mat-icon>
+      </div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color: var(--text-muted);">Tasks Done</p>
+      <p class="font-display font-bold" style="font-size: 28px; color: var(--text-primary); line-height: 1;">
+        {{ data()!.cards.tasksCompleted | number }}
+      </p>
+    </div>
+
+    <!-- Total Earnings -->
+    <div class="rounded-2xl p-5" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style="background: #faf5ff;">
+        <mat-icon style="font-size: 20px; width: 20px; height: 20px; color: #8b5cf6;">account_balance_wallet</mat-icon>
+      </div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color: var(--text-muted);">Total Earnings</p>
+      <p class="font-display font-bold" style="font-size: 20px; color: var(--text-primary); line-height: 1.2;">
+        {{ data()!.cards.earnings | currency:'INR':'symbol':'1.0-0' }}
+      </p>
+    </div>
+
+    <!-- Paid Amount -->
+    <div class="rounded-2xl p-5" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style="background: #dcfce7;">
+        <mat-icon style="font-size: 20px; width: 20px; height: 20px; color: #16a34a;">task_alt</mat-icon>
+      </div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color: var(--text-muted);">Paid Amount</p>
+      <p class="font-display font-bold" style="font-size: 20px; color: #16a34a; line-height: 1.2;">
+        {{ data()!.cards.paidAmount | currency:'INR':'symbol':'1.0-0' }}
+      </p>
+      <!-- Payment coverage bar -->
+      <div class="rounded-full mt-2 overflow-hidden" style="height: 4px; background: var(--border-color);">
+        <div class="h-full rounded-full" style="background: #16a34a; transition: width 0.6s ease;"
+          [style.width]="paymentCoverage() + '%'"></div>
+      </div>
+      <p class="text-xs mt-1" style="color: var(--text-muted);">{{ paymentCoverage() }}% received</p>
+    </div>
+
+    <!-- Pending Amount -->
+    <div class="rounded-2xl p-5" style="background: linear-gradient(135deg, #d97706, #b45309); border: none;">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style="background: rgba(255,255,255,0.2);">
+        <mat-icon style="font-size: 20px; width: 20px; height: 20px; color: white;">pending_actions</mat-icon>
+      </div>
+      <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color: rgba(255,255,255,0.75);">Pending</p>
+      <p class="font-display font-bold" style="font-size: 20px; color: white; line-height: 1.2;">
+        {{ data()!.cards.pendingAmount | currency:'INR':'symbol':'1.0-0' }}
+      </p>
+      <p class="text-xs mt-1" style="color: rgba(255,255,255,0.7);">Awaiting payment</p>
+    </div>
+
+  </div>
+
+  <!-- ── Section 2: Charts ──────────────────────────────────────────────── -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
+
+    <!-- Earnings Trend -->
+    <div class="rounded-2xl p-5" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="font-display font-bold text-sm" style="color: var(--text-primary);">Earnings Trend</h3>
+          <p class="text-xs mt-0.5" style="color: var(--text-muted);">Monthly earnings over last 6 months</p>
+        </div>
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: #f0fdf4;">
+          <mat-icon style="font-size: 16px; width: 16px; height: 16px; color: #16a34a;">show_chart</mat-icon>
+        </div>
+      </div>
+      <div style="height: 220px;">
+        <canvas baseChart [data]="earningsTrendData" [options]="earningsTrendOptions" type="line"></canvas>
+      </div>
+    </div>
+
+    <!-- Task Completion Trend -->
+    <div class="rounded-2xl p-5" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="font-display font-bold text-sm" style="color: var(--text-primary);">Task Completion Trend</h3>
+          <p class="text-xs mt-0.5" style="color: var(--text-muted);">Tasks completed per day (recent entries)</p>
+        </div>
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: #f0f9ff;">
+          <mat-icon style="font-size: 16px; width: 16px; height: 16px; color: #0ea5e9;">bar_chart</mat-icon>
+        </div>
+      </div>
+      <div style="height: 220px;">
+        <canvas baseChart [data]="taskTrendData" [options]="taskTrendOptions" type="bar"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Section 3: Work History Table (Full Width) ─────────────────────── -->
+  <div class="rounded-2xl overflow-hidden mb-6" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+    <div class="flex items-center justify-between px-5 py-4" style="border-bottom: 1px solid var(--border-light);">
+      <div class="flex items-center gap-2">
+        <mat-icon style="font-size: 18px; width: 18px; height: 18px; color: #3b82f6;">history</mat-icon>
+        <h3 class="font-display font-bold text-sm" style="color: var(--text-primary);">Work History</h3>
+      </div>
+      <span class="text-xs font-semibold px-2.5 py-1 rounded-full" style="background: #eff6ff; color: #3b82f6;">
+        Last {{ data()!.tables.workHistory.length }} entries
+      </span>
+    </div>
+
+    @if (data()!.tables.workHistory.length === 0) {
+      <div class="flex flex-col items-center justify-center py-12 gap-2">
+        <mat-icon style="font-size: 40px; width: 40px; height: 40px; color: var(--text-muted);">inbox</mat-icon>
+        <p style="font-size: 14px; color: var(--text-muted);">No work entries recorded yet.</p>
+      </div>
+    } @else {
+      <div style="overflow-x: auto;overflow-y:auto;max-height:360px;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead style="position:sticky;top:0;z-index:2;">
+            <tr style="border-bottom: 2px solid var(--border-light);box-shadow:0 2px 4px rgba(0,0,0,0.06);">
+              <th style="text-align:left;padding:10px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;background:var(--bg-surface);">Date</th>
+              <th style="text-align:center;padding:10px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;background:var(--bg-surface);">Type</th>
+              <th style="text-align:center;padding:10px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;background:var(--bg-surface);">Tasks</th>
+              <th style="text-align:center;padding:10px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;background:var(--bg-surface);">Hours</th>
+              <th style="text-align:right;padding:10px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;background:var(--bg-surface);">Earnings</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of data()!.tables.workHistory; track entry._id; let i = $index) {
+              <tr style="border-bottom: 1px solid var(--border-light);"
+                [style.background]="i % 2 === 0 ? 'transparent' : 'var(--bg-surface-2)'">
+                <td style="padding: 11px 16px;">
+                  <span class="text-sm font-semibold" style="color: var(--text-primary);">{{ entry.date | date:'EEE, MMM d, y' }}</span>
+                </td>
+                <td style="padding: 11px 16px; text-align: center;">
+                  <span class="text-xs font-semibold px-2 py-0.5 rounded-full capitalize"
+                    [style.background]="entry.salaryTypeApplied === 'daily' ? '#eff6ff' : '#f0fdf4'"
+                    [style.color]="entry.salaryTypeApplied === 'daily' ? '#3b82f6' : '#16a34a'">
+                    {{ entry.salaryTypeApplied }}
+                  </span>
+                </td>
+                <td style="padding: 11px 16px; text-align: center;">
+                  <span class="text-sm" style="color: var(--text-secondary);">{{ entry.taskCount || '—' }}</span>
+                </td>
+                <td style="padding: 11px 16px; text-align: center;">
+                  <span class="text-sm" style="color: var(--text-secondary);">{{ entry.workHours }}h</span>
+                </td>
+                <td style="padding: 11px 16px; text-align: right;">
+                  <span class="font-bold" style="color: #16a34a; font-size: 14px;">
+                    {{ entry.earnings | currency:'INR':'symbol':'1.0-0' }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <!-- ── Section 4: Payment History Table (Full Width) ─────────────────── -->
+  <div class="rounded-2xl overflow-hidden" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+    <div class="flex items-center justify-between px-5 py-4" style="border-bottom: 1px solid var(--border-light);">
+      <div class="flex items-center gap-2">
+        <mat-icon style="font-size: 18px; width: 18px; height: 18px; color: #16a34a;">payments</mat-icon>
+        <h3 class="font-display font-bold text-sm" style="color: var(--text-primary);">Payment History</h3>
+      </div>
+      <span class="text-xs font-semibold px-2.5 py-1 rounded-full" style="background: #dcfce7; color: #16a34a;">
+        {{ data()!.tables.paymentHistory.length }} records
+      </span>
+    </div>
+
+    @if (data()!.tables.paymentHistory.length === 0) {
+      <div class="flex flex-col items-center justify-center py-12 gap-2">
+        <mat-icon style="font-size: 40px; width: 40px; height: 40px; color: var(--text-muted);">receipt_long</mat-icon>
+        <p style="font-size: 14px; color: var(--text-muted);">No payment records yet.</p>
+      </div>
+    } @else {
+      <div style="overflow-x: auto;overflow-y:auto;max-height:360px;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead style="position:sticky;top:0;z-index:2;">
+            <tr style="border-bottom: 2px solid var(--border-light);box-shadow:0 2px 4px rgba(0,0,0,0.06);">
+              <th style="text-align:left;padding:10px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;background:var(--bg-surface);">Payment Date</th>
+              <th style="text-align:left;padding:10px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;background:var(--bg-surface);">Period</th>
+              <th style="text-align:center;padding:10px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;background:var(--bg-surface);">Status</th>
+              <th style="text-align:right;padding:10px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;background:var(--bg-surface);">Amount Due</th>
+              <th style="text-align:right;padding:10px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;background:var(--bg-surface);">Amount Paid</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of data()!.tables.paymentHistory; track p._id; let i = $index) {
+              <tr style="border-bottom: 1px solid var(--border-light);"
+                [style.background]="i % 2 === 0 ? 'transparent' : 'var(--bg-surface-2)'">
+                <td style="padding: 11px 16px;">
+                  <span class="text-sm font-semibold" style="color: var(--text-primary);">
+                    {{ p.paymentDate | date:'MMM d, y' }}
+                  </span>
+                </td>
+                <td style="padding: 11px 16px;">
+                  <span class="text-xs" style="color: var(--text-muted);">
+                    {{ p.periodStart | date:'MMM d' }} – {{ p.periodEnd | date:'MMM d, y' }}
+                  </span>
+                </td>
+                <td style="padding: 11px 16px; text-align: center;">
+                  <span class="text-xs font-semibold px-2.5 py-1 rounded-full capitalize"
+                    [style.background]="statusBg(p.status)"
+                    [style.color]="statusColor(p.status)">
+                    {{ p.status }}
+                  </span>
+                </td>
+                <td style="padding: 11px 16px; text-align: right;">
+                  <span class="text-sm" style="color: var(--text-secondary);">
+                    {{ p.amountDue | currency:'INR':'symbol':'1.0-0' }}
+                  </span>
+                </td>
+                <td style="padding: 11px 16px; text-align: right;">
+                  <span class="font-bold" [style.color]="statusColor(p.status)" style="font-size: 14px;">
+                    {{ p.amountPaid | currency:'INR':'symbol':'1.0-0' }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+          <!-- Summary Footer -->
+          <tfoot>
+            <tr style="border-top: 2px solid var(--border-color); background: var(--bg-surface-2);">
+              <td colspan="3" style="padding: 12px 16px; font-size: 13px; font-weight: 700; color: var(--text-secondary);">Total</td>
+              <td style="padding: 12px 16px; text-align: right; font-size: 14px; font-weight: 700; color: var(--text-primary);">
+                {{ data()!.cards.earnings | currency:'INR':'symbol':'1.0-0' }}
+              </td>
+              <td style="padding: 12px 16px; text-align: right; font-size: 14px; font-weight: 700; color: #16a34a;">
+                {{ data()!.cards.paidAmount | currency:'INR':'symbol':'1.0-0' }}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    }
+  </div>
+
+}

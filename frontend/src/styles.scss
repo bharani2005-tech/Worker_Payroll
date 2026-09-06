@@ -1,0 +1,219 @@
+// Include theming for Angular Material with `mat.theme()`.
+@use '@angular/material' as mat;
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+/* Preflight intentionally excluded: its global resets on input/label/border/
+   box-sizing conflict with Angular Material's mat-form-field layout math,
+   causing floating labels to collapse and overlap with input text. */
+
+// WorkerPay Pro design tokens — Green theme matching the dashboard PNG
+@theme {
+  --color-brand-primary: #16a34a;
+  --color-brand-secondary: #059669;
+  --color-brand-accent: #0ea5e9;
+  --color-brand-success: #22c55e;
+  --color-brand-warning: #f59e0b;
+  --color-brand-danger: #ef4444;
+  --color-surface-dark: #0b1120;
+  --color-surface-light: #f4f6f8;
+  --font-display: 'Manrope', 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+:root {
+  --brand-primary: #16a34a;
+  --brand-secondary: #059669;
+  --brand-accent: #0ea5e9;
+  --brand-success: #22c55e;
+  --brand-warning: #f59e0b;
+  --brand-danger: #ef4444;
+  --surface-dark: #0b1120;
+  --surface-light: #f4f6f8;
+  --font-display: 'Manrope', 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 72px;
+}
+
+html {
+  @include mat.theme((color: (primary: mat.$green-palette,
+        tertiary: mat.$cyan-palette,
+      ),
+      typography: Inter,
+      density: 0,
+    ));
+}
+
+// ── Semantic theme tokens (light defaults) ─────────────────────────────────
+:root {
+  --bg-page:        #f4f6f8;
+  --bg-surface:     #ffffff;
+  --bg-surface-2:   #f8fafc;
+  --bg-surface-3:   #f1f5f9;
+  --border-color:   #e8ecf0;
+  --border-light:   #f1f5f9;
+  --text-primary:   #0f172a;
+  --text-secondary: #64748b;
+  --text-muted:     #94a3b8;
+  --text-inverse:   #ffffff;
+  --input-bg:       #ffffff;
+  --input-border:   #e2e8f0;
+  --shadow-color:   rgba(0, 0, 0, 0.06);
+  --nav-active-bg:  #f0fdf4;
+  --nav-active-fg:  #16a34a;
+  --scrollbar-thumb: #d1d5db;
+}
+
+// ── Dark mode overrides ────────────────────────────────────────────────────
+html.dark {
+  --bg-page:        #0b1120;
+  --bg-surface:     #131c2e;
+  --bg-surface-2:   #1a2540;
+  --bg-surface-3:   #1e2d4a;
+  --border-color:   #243050;
+  --border-light:   #1e2d4a;
+  --text-primary:   #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted:     #64748b;
+  --text-inverse:   #0f172a;
+  --input-bg:       #1a2540;
+  --input-border:   #243050;
+  --shadow-color:   rgba(0, 0, 0, 0.3);
+  --nav-active-bg:  #16a34a22;
+  --nav-active-fg:  #4ade80;
+  --scrollbar-thumb: #334155;
+
+  color-scheme: dark;
+}
+
+body {
+  color-scheme: light;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  margin: 0;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+html.dark body {
+  color-scheme: dark;
+}
+
+
+html,
+body {
+  height: 100%;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+.font-mono-num {
+  font-family: var(--font-mono);
+  font-feature-settings: 'tnum';
+}
+
+// Subtle scrollbar
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+// Sidebar active state uses green
+.nav-active {
+  background: var(--nav-active-bg) !important;
+  color: var(--nav-active-fg) !important;
+  font-weight: 600;
+}
+
+// Card hover lift
+.card-hover {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 8px 24px rgba(22, 163, 74, 0.1);
+    transform: translateY(-1px);
+  }
+}
+
+// Gradient text for brand
+.text-brand-gradient {
+  background: linear-gradient(135deg, #16a34a, #059669);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+// Green pill badge
+.badge-green {
+  background: #dcfce7;
+  color: #16a34a;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.badge-yellow {
+  background: #fef9c3;
+  color: #ca8a04;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.badge-red {
+  background: #fee2e2;
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.badge-blue {
+  background: #e0f2fe;
+  color: #0284c7;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+// Respect reduced motion preference globally
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+// Hide native password reveal icon in Edge/IE to prevent duplicate eye icons
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}

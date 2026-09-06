@@ -1,0 +1,179 @@
+<div class="h-screen flex overflow-hidden" style="background: var(--bg-page);">
+  <!-- ══════════════ SIDEBAR ══════════════ -->
+  <aside
+    class="h-full flex flex-col transition-all duration-300 shrink-0"
+    style="background: var(--bg-surface); border-right: 1px solid var(--border-color); box-shadow: 1px 0 4px var(--shadow-color);"
+    [style.width]="sidebarOpen() ? '232px' : '68px'"
+  >
+    <!-- Logo -->
+    <div class="flex items-center shrink-0" style="height: 64px; padding: 0 16px; border-bottom: 1px solid var(--border-light); gap: 10px;">
+      <div
+        class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+        style="background: linear-gradient(135deg, #16a34a, #059669); flex-shrink: 0;"
+      >
+        <mat-icon style="font-size: 18px; width: 18px; height: 18px; color: white;">payments</mat-icon>
+      </div>
+      @if (sidebarOpen()) {
+        <span
+          class="font-display font-bold whitespace-nowrap"
+          style="color: #16a34a; font-size: 16px; letter-spacing: -0.02em; transition: opacity 0.2s;"
+        >WorkerPay</span>
+      }
+      <button
+        (click)="sidebarOpen.set(!sidebarOpen())"
+        class="flex items-center justify-center transition-colors rounded-lg"
+        style="margin-left: auto; width: 28px; height: 28px; border: 1px solid var(--border-color); color: var(--text-muted); background: var(--bg-surface); flex-shrink: 0; cursor: pointer;"
+        onmouseover="this.style.background='var(--bg-surface-2)';this.style.color='var(--text-secondary)';"
+        onmouseout="this.style.background='var(--bg-surface)';this.style.color='var(--text-muted)';"
+      >
+        <mat-icon style="font-size: 15px; width: 15px; height: 15px;">{{ sidebarOpen() ? 'chevron_left' : 'chevron_right' }}</mat-icon>
+      </button>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 overflow-y-auto py-3 flex flex-col" style="gap: 2px; padding-left: 8px; padding-right: 8px;">
+      @for (section of navSections; track section.heading) {
+        <div style="margin-bottom: 8px;">
+          @if (sidebarOpen()) {
+            <p
+              class="font-display uppercase"
+              style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: var(--text-muted); padding: 0 12px; margin-bottom: 4px;"
+            >{{ section.heading }}</p>
+          } @else {
+            <!-- Divider in collapsed mode -->
+            <div style="height: 1px; background: var(--border-light); margin: 4px 8px 8px;"></div>
+          }
+          <div class="flex flex-col" style="gap: 1px;">
+            @for (item of section.items; track item.route) {
+              <a
+                [routerLink]="item.route"
+                routerLinkActive="nav-active"
+                [routerLinkActiveOptions]="{ exact: isExactRoute(item.route) }"
+                class="flex items-center rounded-xl transition-colors"
+                style="color: var(--text-secondary); font-size: 13.5px; font-weight: 500; padding: 9px 12px; gap: 10px; text-decoration: none;"
+                [style.justify-content]="sidebarOpen() ? 'flex-start' : 'center'"
+              >
+                <mat-icon class="shrink-0" style="font-size: 19px; width: 19px; height: 19px;">{{ item.icon }}</mat-icon>
+                @if (sidebarOpen()) {
+                  <span class="whitespace-nowrap">{{ item.label }}</span>
+                  @if (item.badge) {
+                    <span
+                      class="ml-auto text-xs font-bold rounded-full flex items-center justify-center"
+                      style="min-width: 20px; height: 20px; padding: 0 6px; background: #fef3c7; color: #d97706;"
+                    >{{ item.badge }}</span>
+                  }
+                }
+              </a>
+            }
+          </div>
+        </div>
+      }
+    </nav>
+
+    <!-- Footer: user + logout -->
+    <div style="border-top: 1px solid var(--border-light); padding: 10px 8px;">
+      <div
+        class="flex items-center rounded-xl px-3 py-2"
+        style="gap: 10px;"
+        [style.justify-content]="sidebarOpen() ? 'flex-start' : 'center'"
+      >
+        <div
+          class="rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+          style="width: 34px; height: 34px; background: linear-gradient(135deg, #0ea5e9, #0284c7); flex-shrink: 0;"
+        >
+          {{ authService.currentUser()?.name?.charAt(0) }}
+        </div>
+        @if (sidebarOpen()) {
+          <div class="flex flex-col leading-none min-w-0">
+            <span class="font-semibold truncate" style="font-size: 13px; color: var(--text-primary);">{{ authService.currentUser()?.name }}</span>
+            <span class="capitalize" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">{{ authService.currentUser()?.role }}</span>
+          </div>
+        }
+      </div>
+      <button
+        (click)="logout()"
+        class="flex items-center rounded-xl transition-colors"
+        style="width: 100%; padding: 8px 12px; gap: 10px; font-size: 13px; font-weight: 500; color: var(--text-muted); background: transparent; border: none; cursor: pointer; margin-top: 2px;"
+        [style.justify-content]="sidebarOpen() ? 'flex-start' : 'center'"
+        onmouseover="this.style.color='#ef4444';this.style.background='#fef2f2';"
+        onmouseout="this.style.color='var(--text-muted)';this.style.background='transparent';"
+      >
+        <mat-icon class="shrink-0" style="font-size: 18px; width: 18px; height: 18px;">logout</mat-icon>
+        @if (sidebarOpen()) {
+          <span>Log out</span>
+        }
+      </button>
+    </div>
+  </aside>
+
+  <!-- ══════════════ MAIN COLUMN ══════════════ -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+    <!-- Topbar -->
+    <header
+      class="flex items-center justify-between shrink-0"
+      style="background: var(--bg-surface); height: 64px; padding: 0 28px; border-bottom: 1px solid var(--border-color);"
+    >
+      <!-- Breadcrumb -->
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-medium" style="color: var(--text-muted);">
+          {{ authService.isAdmin() ? 'Admin' : 'Worker' }}
+        </span>
+        <mat-icon style="font-size: 14px; width: 14px; height: 14px; color: var(--border-color);">chevron_right</mat-icon>
+        <span class="text-sm font-semibold" style="color: var(--text-primary);">Dashboard</span>
+      </div>
+
+      <!-- Right actions -->
+      <div class="flex items-center gap-3">
+
+        <!-- Dark / Light mode toggle -->
+        <button
+          (click)="themeService.setTheme(themeService.isDark() ? 'light' : 'dark')"
+          class="flex items-center justify-center transition-colors"
+          style="width: 40px; height: 40px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-surface); color: var(--text-secondary); cursor: pointer;"
+          [title]="themeService.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+          aria-label="Toggle dark mode"
+        >
+          <mat-icon style="font-size: 18px; width: 18px; height: 18px;">
+            {{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}
+          </mat-icon>
+        </button>
+
+        <!-- Notification bell -->
+        <button
+          mat-icon-button
+          [routerLink]="authService.isAdmin() ? '/admin/notifications' : '/worker/notifications'"
+          [matBadge]="notificationService.unreadCount() > 0 ? notificationService.unreadCount() : null"
+          matBadgeColor="warn"
+          matBadgeSize="small"
+          class="transition-colors"
+          style="color: var(--text-secondary); background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px; width: 40px; height: 40px; cursor: pointer;"
+          aria-label="Notifications"
+        >
+          <mat-icon>notifications_none</mat-icon>
+        </button>
+
+        <div style="width: 1px; height: 24px; background: var(--border-color);"></div>
+
+        <!-- User info + avatar -->
+        <div class="flex items-center gap-2.5">
+          <div class="flex flex-col text-right">
+            <span class="text-sm font-semibold" style="color: var(--text-primary);">{{ authService.currentUser()?.name }}</span>
+            <span class="text-xs capitalize" style="color: var(--text-muted);">{{ authService.currentUser()?.role }}</span>
+          </div>
+          <div
+            class="rounded-full flex items-center justify-center text-white text-sm font-bold"
+            style="width: 38px; height: 38px; background: linear-gradient(135deg, #16a34a, #059669);"
+          >
+            {{ authService.currentUser()?.name?.charAt(0) }}
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page content -->
+    <main class="flex-1 overflow-y-auto" style="padding: 24px 28px;">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

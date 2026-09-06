@@ -1,0 +1,225 @@
+<app-page-header title="My Attendance" subtitle="Your personal day-by-day attendance log">
+  <div class="flex items-center gap-3">
+    <!-- Month picker -->
+    <div class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm" style="background: var(--bg-surface); border: 1px solid var(--border-color); color: var(--text-secondary);">
+      <mat-icon style="font-size:15px;width:15px;height:15px;">calendar_today</mat-icon>
+      <input
+        type="month"
+        [(ngModel)]="selectedMonth"
+        (change)="onMonthChange()"
+        style="border:none;outline:none;font-size:13px;color:var(--text-primary);font-family:inherit;background:transparent;"
+      />
+    </div>
+    <!-- Export -->
+    <button
+      (click)="exportCSV()"
+      class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+      style="background: #16a34a; color: white; border: none; cursor: pointer;"
+      onmouseover="this.style.background='#15803d';"
+      onmouseout="this.style.background='#16a34a';"
+    >
+      <mat-icon style="font-size:16px;width:16px;height:16px;">file_download</mat-icon>
+      Export CSV
+    </button>
+  </div>
+</app-page-header>
+
+<!-- ══════════════════════ LOADING ══════════════════════ -->
+@if (loading()) {
+  <div class="flex flex-col items-center justify-center gap-4" style="min-height: 300px;">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p style="color: var(--text-muted); font-size: 14px;">Loading your attendance…</p>
+  </div>
+}
+
+<!-- ══════════════════════ ERROR ══════════════════════ -->
+@if (!loading() && error()) {
+  <div class="flex items-center gap-3 rounded-2xl p-5 mb-6" style="background: #fee2e2; border: 1px solid #fca5a5;">
+    <mat-icon style="color: #ef4444;">error_outline</mat-icon>
+    <span style="color: #dc2626; font-size: 14px; font-weight: 500;">{{ error() }}</span>
+  </div>
+}
+
+<!-- ══════════════════════ CONTENT ══════════════════════ -->
+@if (!loading() && !error() && data()) {
+
+  <!-- ── KPI Cards ──────────────────────────────────────────────────────── -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+
+    <!-- Days Tracked -->
+    <div class="rounded-2xl p-4 flex flex-col gap-3" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#eff6ff;">
+        <mat-icon style="font-size:18px;width:18px;height:18px;color:#3b82f6;">calendar_month</mat-icon>
+      </div>
+      <div>
+        <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:var(--text-muted);">Days Tracked</p>
+        <p class="font-display font-bold" style="font-size:26px;color:var(--text-primary);">{{ summary()!.totalDays }}</p>
+      </div>
+    </div>
+
+    <!-- Present -->
+    <div class="rounded-2xl p-4 flex flex-col gap-3" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#f0fdf4;">
+        <mat-icon style="font-size:18px;width:18px;height:18px;color:#22c55e;">check_circle</mat-icon>
+      </div>
+      <div>
+        <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:var(--text-muted);">Present</p>
+        <p class="font-display font-bold" style="font-size:26px;color:var(--text-primary);">{{ summary()!.presentCount }}</p>
+      </div>
+    </div>
+
+    <!-- Absent -->
+    <div class="rounded-2xl p-4 flex flex-col gap-3" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#fef2f2;">
+        <mat-icon style="font-size:18px;width:18px;height:18px;color:#ef4444;">cancel</mat-icon>
+      </div>
+      <div>
+        <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:var(--text-muted);">Absent</p>
+        <p class="font-display font-bold" style="font-size:26px;color:var(--text-primary);">{{ summary()!.absentCount }}</p>
+      </div>
+    </div>
+
+    <!-- Attendance Rate -->
+    <div class="rounded-2xl p-4 flex flex-col gap-3" style="background: linear-gradient(135deg,#16a34a,#059669); border:none;">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:rgba(255,255,255,0.2);">
+        <mat-icon style="font-size:18px;width:18px;height:18px;color:white;">trending_up</mat-icon>
+      </div>
+      <div>
+        <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:rgba(255,255,255,0.75);">Rate</p>
+        <p class="font-display font-bold" style="font-size:26px;color:white;">{{ summary()!.attendanceRate }}%</p>
+        <div class="rounded-full mt-2 overflow-hidden" style="height:4px;background:rgba(255,255,255,0.3);">
+          <div class="h-full rounded-full" style="background:white;transition:width 0.6s ease;" [style.width]="summary()!.attendanceRate + '%'"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Chart + Stats Row ───────────────────────────────────────────────── -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+
+    <!-- Donut Status -->
+    <div class="rounded-2xl p-5" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+      <div class="mb-4">
+        <h3 class="font-display font-bold text-sm" style="color:var(--text-primary);">Month Summary</h3>
+        <p class="text-xs mt-0.5" style="color:var(--text-muted);">{{ data()!.month }}</p>
+      </div>
+      <div style="height:160px;position:relative;" class="mb-4">
+        <canvas baseChart [data]="donutData" [options]="donutOptions" type="doughnut"></canvas>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+          <span class="font-display font-bold" style="font-size:22px;color:var(--text-primary);">{{ summary()!.attendanceRate }}%</span>
+          <span style="font-size:10px;color:var(--text-muted);margin-top:2px;">Attendance</span>
+        </div>
+      </div>
+      <div class="flex flex-col gap-2">
+        <div class="flex items-center justify-between py-1" style="border-bottom:1px solid var(--border-light);">
+          <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#22c55e;"></span><span class="text-xs" style="color:var(--text-secondary);">Present</span></div>
+          <span class="text-xs font-semibold" style="color:var(--text-primary);">{{ summary()!.presentCount }}</span>
+        </div>
+        <div class="flex items-center justify-between py-1">
+          <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#ef4444;"></span><span class="text-xs" style="color:var(--text-secondary);">Absent</span></div>
+          <span class="text-xs font-semibold" style="color:var(--text-primary);">{{ summary()!.absentCount }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile / Quick Stats -->
+    <div class="lg:col-span-2 rounded-2xl p-5" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+      <h3 class="font-display font-bold text-sm mb-4" style="color:var(--text-primary);">My Profile</h3>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div>
+          <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:var(--text-muted);">Employee Code</p>
+          <p class="text-sm font-semibold font-mono" style="color:var(--text-primary);">{{ data()!.worker.employeeCode }}</p>
+        </div>
+        <div>
+          <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:var(--text-muted);">Department</p>
+          <p class="text-sm font-semibold" style="color:var(--text-primary);">{{ data()!.worker.department }}</p>
+        </div>
+        <div>
+          <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:var(--text-muted);">Designation</p>
+          <p class="text-sm font-semibold" style="color:var(--text-primary);">{{ data()!.worker.designation }}</p>
+        </div>
+        <div>
+          <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:var(--text-muted);">Salary Type</p>
+          <p class="text-sm font-semibold capitalize" style="color:var(--text-primary);">{{ data()!.worker.salaryType }}</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4 mt-5 pt-5" style="border-top:1px solid var(--border-light);">
+        <div>
+          <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:var(--text-muted);">Total Work Hours</p>
+          <p class="font-display font-bold" style="font-size:20px;color:var(--text-primary);">{{ summary()!.totalWorkHours }}h</p>
+        </div>
+        <div>
+          <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:var(--text-muted);">Earnings This Month</p>
+          <p class="font-display font-bold" style="font-size:20px;color:#16a34a;">{{ summary()!.totalEarnings | currency:'INR':'symbol':'1.0-0' }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Daily Log Table ─────────────────────────────────────────────────── -->
+  <div class="rounded-2xl overflow-hidden" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+    <div class="flex items-center justify-between px-5 py-4" style="border-bottom: 1px solid var(--border-light);">
+      <div class="flex items-center gap-2">
+        <mat-icon style="font-size: 18px; width: 18px; height: 18px; color: #3b82f6;">event_note</mat-icon>
+        <h3 class="font-display font-bold text-sm" style="color: var(--text-primary);">Daily Log</h3>
+      </div>
+      <span class="text-xs font-semibold px-2.5 py-1 rounded-full" style="background: #eff6ff; color: #3b82f6;">
+        {{ records().length }} days
+      </span>
+    </div>
+
+    @if (records().length === 0) {
+      <div class="flex flex-col items-center justify-center py-12 gap-2">
+        <mat-icon style="font-size: 40px; width: 40px; height: 40px; color: var(--text-muted);">inbox</mat-icon>
+        <p style="font-size: 14px; color: var(--text-muted);">No attendance data for this month yet.</p>
+      </div>
+    } @else {
+      <div style="overflow-x: auto;overflow-y:auto;max-height:420px;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead style="position:sticky;top:0;z-index:2;">
+            <tr style="border-bottom: 2px solid var(--border-light);box-shadow:0 2px 4px rgba(0,0,0,0.06);">
+              <th style="text-align:left;padding:10px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;background:var(--bg-surface);">Date</th>
+              <th style="text-align:center;padding:10px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;background:var(--bg-surface);">Status</th>
+              <th style="text-align:right;padding:10px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;background:var(--bg-surface);">Work Hrs</th>
+              <th style="text-align:right;padding:10px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;background:var(--bg-surface);">Tasks</th>
+              <th style="text-align:right;padding:10px 16px;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;background:var(--bg-surface);">Earnings</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of records(); track r.date; let i = $index) {
+              <tr style="border-bottom: 1px solid var(--border-light);"
+                [style.background]="i % 2 === 0 ? 'transparent' : 'var(--bg-surface-2)'">
+                <td style="padding: 11px 16px;">
+                  <span class="text-sm font-semibold" style="color: var(--text-primary);">{{ r.date | date:'EEE, MMM d, y' }}</span>
+                </td>
+                <td style="padding: 11px 16px; text-align: center;">
+                  <span class="text-xs font-semibold px-2.5 py-1 rounded-full"
+                    [style.background]="statusBg(r.status)"
+                    [style.color]="statusColor(r.status)">{{ statusLabel(r.status) }}</span>
+                </td>
+                <td style="padding: 11px 16px; text-align: right;">
+                  @if (r.workHours > 0) {
+                    <span class="text-sm" style="color: var(--text-secondary);">{{ r.workHours }}h</span>
+                  } @else {
+                    <span style="color:var(--text-muted);">—</span>
+                  }
+                </td>
+                <td style="padding: 11px 16px; text-align: right;">
+                  <span class="text-sm" style="color: var(--text-secondary);">{{ r.taskCount || '—' }}</span>
+                </td>
+                <td style="padding: 11px 16px; text-align: right;">
+                  @if (r.earnings > 0) {
+                    <span class="font-bold" style="color: #16a34a; font-size: 14px;">{{ r.earnings | currency:'INR':'symbol':'1.0-0' }}</span>
+                  } @else {
+                    <span style="color:var(--text-muted);">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+}

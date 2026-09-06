@@ -1,0 +1,116 @@
+<div class="min-h-screen flex">
+  <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden text-white flex-col justify-between p-12"
+    style="background: linear-gradient(135deg, var(--brand-secondary), var(--brand-primary) 130%);">
+    <div class="absolute inset-0 opacity-10"
+      style="background-image: radial-gradient(circle at 20% 20%, white 1px, transparent 1px); background-size: 28px 28px;">
+    </div>
+
+    <div class="relative z-10 flex items-center gap-2">
+      <div class="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center font-display font-bold">W</div>
+      <span class="font-display font-bold text-lg tracking-tight">WorkerPay Pro</span>
+    </div>
+
+    <div class="relative z-10 max-w-md">
+      <h1 class="font-display text-4xl font-bold leading-tight mb-4">
+        Your work, your earnings, always visible.
+      </h1>
+      <p class="text-white/80 text-base leading-relaxed">
+        Create an account to track your daily work, see your earnings update in real time,
+        and know exactly when you'll get paid.
+      </p>
+    </div>
+
+    <p class="relative z-10 text-sm text-white/60">© 2026 WorkerPay Pro. All rights reserved.</p>
+  </div>
+
+  <!-- Form panel -->
+  <div class="flex-1 relative flex items-center justify-center p-6 sm:p-12 overflow-hidden">
+    <!-- Blurred photo background -->
+    <div class="absolute inset-0" style="
+      background-image: url('https://images.unsplash.com/photo-1541888946425-d81bb19240f5?fm=jpg&q=80&w=2000&auto=format&fit=crop');
+      background-size: cover;
+      background-position: center;
+      filter: blur(6px) saturate(108%) brightness(0.97);
+      transform: scale(1.08);
+    "></div>
+    <!-- Soft tint to keep brand color present + ensure text/card legibility -->
+    <div class="absolute inset-0"
+      style="background: linear-gradient(160deg, rgba(15, 23, 42, 0.22), rgba(22, 163, 74, 0.18));"></div>
+
+    <!-- Glass card -->
+    <div class="relative z-10 w-full max-w-sm rounded-3xl px-8 py-9 sm:px-10 sm:py-10 bg-white/60 dark:bg-slate-900/70 border border-white/55 dark:border-slate-700/50 shadow-[0_8px_40px_-8px_rgba(15,23,42,0.25)] dark:shadow-[0_8px_40px_-8px_rgba(0,0,0,0.5)] backdrop-blur-[22px] backdrop-saturate-[140%]">
+      <div class="lg:hidden flex items-center gap-2 mb-8">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center font-display font-bold text-white"
+          style="background: var(--brand-primary);">W</div>
+        <span class="font-display font-bold text-lg tracking-tight dark:text-white">WorkerPay Pro</span>
+      </div>
+
+      <h2 class="font-display text-2xl font-bold text-slate-900 dark:text-white mb-1">Create your account</h2>
+      <p class="text-slate-600 dark:text-slate-300 text-sm mb-8">Worker accounts are added here; admins are set up by your organization.</p>
+
+      @if (errorMessage()) {
+      <div class="mb-5 rounded-lg text-red-700 text-sm px-4 py-3 flex items-start gap-2"
+        style="background: rgba(254, 242, 242, 0.85); border: 1px solid rgba(254, 202, 202, 0.9);">
+        <mat-icon class="text-red-500 shrink-0"
+          style="font-size: 18px; width: 18px; height: 18px;">error_outline</mat-icon>
+        <span>{{ errorMessage() }}</span>
+      </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-1">
+        <mat-form-field appearance="outline" class="w-full glass-field">
+          <mat-label>Full name</mat-label>
+          <input matInput formControlName="name" autocomplete="name" />
+          @if (form.get('name')?.hasError('required') && form.get('name')?.touched) {
+          <mat-error>Name is required</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full glass-field">
+          <mat-label>Email address</mat-label>
+          <input matInput type="email" formControlName="email" autocomplete="email" />
+          @if (form.get('email')?.hasError('required') && form.get('email')?.touched) {
+          <mat-error>Email is required</mat-error>
+          }
+          @if (form.get('email')?.hasError('email') && form.get('email')?.touched) {
+          <mat-error>Enter a valid email address</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full glass-field">
+          <mat-label>Phone (optional)</mat-label>
+          <input matInput formControlName="phone" autocomplete="tel" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full glass-field">
+          <mat-label>Password</mat-label>
+          <input matInput [type]="hidePassword() ? 'password' : 'text'" formControlName="password"
+            autocomplete="new-password" />
+          <button mat-icon-button matSuffix type="button" (click)="hidePassword.set(!hidePassword())">
+            <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (form.get('password')?.hasError('required') && form.get('password')?.touched) {
+          <mat-error>Password is required</mat-error>
+          }
+          @if (form.get('password')?.hasError('minlength') && form.get('password')?.touched) {
+          <mat-error>Password must be at least 8 characters</mat-error>
+          }
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" type="submit" class="!h-11 !rounded-lg !font-semibold mt-3"
+          style="box-shadow: 0 6px 16px -4px rgba(22, 163, 74, 0.45);" [disabled]="loading()">
+          @if (loading()) {
+          <mat-spinner diameter="20" class="inline-block align-middle"></mat-spinner>
+          } @else {
+          Create account
+          }
+        </button>
+      </form>
+
+      <p class="text-sm text-slate-600 dark:text-slate-300 text-center mt-8">
+        Already have an account?
+        <a routerLink="/auth/login" class="font-medium" style="color: var(--brand-primary);">Sign in</a>
+      </p>
+    </div>
+  </div>
+</div>

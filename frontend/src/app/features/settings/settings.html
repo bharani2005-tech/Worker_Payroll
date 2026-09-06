@@ -1,0 +1,404 @@
+<app-page-header title="Settings" subtitle="Manage your account, security, and preferences"></app-page-header>
+
+<div class="settings-layout">
+  <!-- ── Left: Sidebar Navigation ─────────────────────────────────────────── -->
+  <aside class="settings-nav">
+    <nav class="settings-nav-list">
+      <button
+        (click)="setTab('profile')"
+        class="settings-nav-btn"
+        [class.active]="activeTab() === 'profile'"
+      >
+        <mat-icon>person</mat-icon>
+        Profile
+      </button>
+
+      <button
+        (click)="setTab('security')"
+        class="settings-nav-btn"
+        [class.active]="activeTab() === 'security'"
+      >
+        <mat-icon>lock</mat-icon>
+        Security
+      </button>
+
+      <button
+        (click)="setTab('notifications')"
+        class="settings-nav-btn"
+        [class.active]="activeTab() === 'notifications'"
+      >
+        <mat-icon>notifications_none</mat-icon>
+        Notifications
+      </button>
+
+      <button
+        (click)="setTab('appearance')"
+        class="settings-nav-btn"
+        [class.active]="activeTab() === 'appearance'"
+      >
+        <mat-icon>palette</mat-icon>
+        Appearance
+      </button>
+
+      @if (authService.isAdmin()) {
+        <button
+          (click)="setTab('organization')"
+          class="settings-nav-btn"
+          [class.active]="activeTab() === 'organization'"
+        >
+          <mat-icon>business</mat-icon>
+          Organization
+        </button>
+      }
+    </nav>
+  </aside>
+
+  <!-- ── Right: Content Panel ─────────────────────────────────────────────── -->
+  <div class="settings-content">
+
+    @if (saveFeedback()) {
+      <div class="feedback-banner">
+        <mat-icon>check_circle</mat-icon>
+        {{ saveFeedback() }}
+      </div>
+    }
+
+    <!-- ══════════════════ PROFILE ══════════════════ -->
+    @if (activeTab() === 'profile') {
+      <h2 class="tab-heading">Profile</h2>
+      <p class="tab-desc">Manage your personal information and public details.</p>
+
+      <div class="settings-card">
+        <div class="settings-card-body">
+          <p class="section-title">Personal Details</p>
+          <p class="section-desc">This information will be displayed within the application.</p>
+
+          <div class="avatar-area">
+            <div class="avatar-circle">{{ initials() }}</div>
+            <div class="avatar-info">
+              <button class="btn-secondary" type="button">Upload Photo</button>
+              <span class="avatar-hint">JPG, GIF or PNG. 1 MB max.</span>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <div class="field">
+              <label class="field-label">Full Name</label>
+              <input type="text" class="field-input" [(ngModel)]="profileName" />
+            </div>
+            <div class="field">
+              <label class="field-label">Email Address</label>
+              <input type="email" class="field-input" [value]="authService.currentUser()?.email" disabled />
+            </div>
+            <div class="field">
+              <label class="field-label">Phone Number</label>
+              <input type="tel" class="field-input" [(ngModel)]="profilePhone" placeholder="+91 98765 43210" />
+            </div>
+            <div class="field">
+              <label class="field-label">Department</label>
+              <input type="text" class="field-input" [(ngModel)]="profileDepartment" placeholder="e.g. Operations" />
+            </div>
+          </div>
+        </div>
+        <div class="settings-card-footer">
+          <button class="btn-primary" [disabled]="saving()" (click)="saveProfile()">
+            @if (saving()) {
+              <mat-spinner diameter="16"></mat-spinner>
+            }
+            Save Changes
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- ══════════════════ SECURITY ══════════════════ -->
+    @if (activeTab() === 'security') {
+      <h2 class="tab-heading">Security</h2>
+      <p class="tab-desc">Manage your password, two-factor authentication, and sessions.</p>
+
+      <!-- Password -->
+      <div class="settings-card">
+        <div class="settings-card-body">
+          <p class="section-title">Change Password</p>
+          <p class="section-desc">Use a strong password with at least 8 characters.</p>
+
+          <div class="field-group" style="max-width: 440px;">
+            <div class="field" style="grid-column: 1 / -1;">
+              <label class="field-label">Current Password</label>
+              <input type="password" class="field-input" [(ngModel)]="currentPassword" />
+            </div>
+            <div class="field">
+              <label class="field-label">New Password</label>
+              <input type="password" class="field-input" [(ngModel)]="newPassword" />
+            </div>
+            <div class="field">
+              <label class="field-label">Confirm Password</label>
+              <input type="password" class="field-input" [(ngModel)]="confirmPassword" />
+            </div>
+          </div>
+        </div>
+        <div class="settings-card-footer">
+          <button class="btn-primary" [disabled]="saving()" (click)="changePassword()">
+            @if (saving()) {
+              <mat-spinner diameter="16"></mat-spinner>
+            }
+            Update Password
+          </button>
+        </div>
+      </div>
+
+      <!-- 2FA -->
+      <div class="settings-card">
+        <div class="settings-card-body">
+          <p class="section-title">Two-Factor Authentication</p>
+          <p class="section-desc">Add an extra layer of security to your account.</p>
+          <div class="toggle-row" style="border-bottom: none; padding-top: 0;">
+            <div class="toggle-row-info">
+              <span class="toggle-row-title">Authenticator App</span>
+              <span class="toggle-row-desc">Use Google Authenticator or similar app for 2FA codes.</span>
+            </div>
+            <input
+              type="checkbox"
+              class="theme-checkbox"
+              [checked]="twoFactorEnabled"
+              (change)="twoFactorEnabled = !twoFactorEnabled"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Sessions -->
+      <div class="settings-card">
+        <div class="settings-card-body">
+          <p class="section-title">Active Sessions</p>
+          <p class="section-desc">Devices that are currently signed into your account.</p>
+          <div class="session-row">
+            <div class="session-left">
+              <div class="session-icon-wrap">
+                <mat-icon>computer</mat-icon>
+              </div>
+              <div>
+                <span class="toggle-row-title">Windows PC</span>
+                <p class="toggle-row-desc" style="margin: 2px 0 0;">Chrome Browser · Active now</p>
+              </div>
+            </div>
+            <span class="badge-green">Current</span>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ══════════════════ NOTIFICATIONS ══════════════════ -->
+    @if (activeTab() === 'notifications') {
+      <h2 class="tab-heading">Notifications</h2>
+      <p class="tab-desc">Choose how and when you want to be notified.</p>
+
+      <!-- Delivery Channels -->
+      <div class="settings-card">
+        <div class="settings-card-body">
+          <p class="section-title">Delivery Channels</p>
+          <p class="section-desc">Select the channels through which you receive notifications.</p>
+
+          <div class="toggle-row">
+            <div class="toggle-row-info">
+              <span class="toggle-row-title">Email Notifications</span>
+              <span class="toggle-row-desc">Receive updates via your registered email address.</span>
+            </div>
+            <input type="checkbox" class="theme-checkbox" [checked]="prefs.email" (change)="togglePref('email')" />
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-row-info">
+              <span class="toggle-row-title">Push Notifications</span>
+              <span class="toggle-row-desc">Real-time alerts directly in your browser.</span>
+            </div>
+            <input type="checkbox" class="theme-checkbox" [checked]="prefs.push" (change)="togglePref('push')" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Notification Types -->
+      <div class="settings-card">
+        <div class="settings-card-body">
+          <p class="section-title">Notification Types</p>
+          <p class="section-desc">Pick which events should alert you.</p>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="notif-type-card" (click)="togglePref('paymentAlerts')">
+              <div class="notif-type-left">
+                <div class="notif-type-icon" style="background: #f0fdf4; color: #16a34a;">
+                  <mat-icon>payments</mat-icon>
+                </div>
+                <span class="notif-type-label">Payment Alerts</span>
+              </div>
+              <input type="checkbox" class="theme-checkbox" style="pointer-events: none;" [checked]="prefs.paymentAlerts" tabindex="-1" />
+            </div>
+
+            <div class="notif-type-card" (click)="togglePref('workEntryAlerts')">
+              <div class="notif-type-left">
+                <div class="notif-type-icon" style="background: #e0f2fe; color: #0284c7;">
+                  <mat-icon>fact_check</mat-icon>
+                </div>
+                <span class="notif-type-label">Work Entry Updates</span>
+              </div>
+              <input type="checkbox" class="theme-checkbox" style="pointer-events: none;" [checked]="prefs.workEntryAlerts" tabindex="-1" />
+            </div>
+
+            <div class="notif-type-card" (click)="togglePref('announcements')">
+              <div class="notif-type-left">
+                <div class="notif-type-icon" style="background: #fef9c3; color: #ca8a04;">
+                  <mat-icon>campaign</mat-icon>
+                </div>
+                <span class="notif-type-label">Announcements</span>
+              </div>
+              <input type="checkbox" class="theme-checkbox" style="pointer-events: none;" [checked]="prefs.announcements" tabindex="-1" />
+            </div>
+
+            <div class="notif-type-card" (click)="togglePref('weeklySummary')">
+              <div class="notif-type-left">
+                <div class="notif-type-icon" style="background: #f3e8ff; color: #9333ea;">
+                  <mat-icon>summarize</mat-icon>
+                </div>
+                <span class="notif-type-label">Weekly Summary</span>
+              </div>
+              <input type="checkbox" class="theme-checkbox" style="pointer-events: none;" [checked]="prefs.weeklySummary" tabindex="-1" />
+            </div>
+          </div>
+        </div>
+        <div class="settings-card-footer">
+          <button class="btn-primary" [disabled]="saving()" (click)="savePreferences()">
+            @if (saving()) {
+              <mat-spinner diameter="16"></mat-spinner>
+            }
+            Save Preferences
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- ══════════════════ APPEARANCE ══════════════════ -->
+    @if (activeTab() === 'appearance') {
+      <h2 class="tab-heading">Appearance</h2>
+      <p class="tab-desc">Customize the look and feel of the interface.</p>
+
+      <div class="settings-card">
+        <div class="settings-card-body">
+          <p class="section-title">Theme</p>
+          <p class="section-desc">Select a color scheme for the application.</p>
+
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 440px; margin-bottom: 28px;">
+            @for (t of themeOptions; track t.value) {
+              <button
+                class="theme-card"
+                [class.active]="theme === t.value"
+                (click)="setTheme(t.value)"
+              >
+                <mat-icon>{{ t.icon }}</mat-icon>
+                <span>{{ t.label }}</span>
+              </button>
+            }
+          </div>
+
+          <div class="settings-divider"></div>
+
+          <p class="section-title">Layout Density</p>
+          <p class="section-desc">Adjust the spacing between UI elements.</p>
+
+          <div class="density-group" style="margin-bottom: 28px;">
+            @for (d of densityOptions; track d.value) {
+              <button
+                class="density-btn"
+                [class.active]="density === d.value"
+                (click)="setDensity(d.value)"
+              >{{ d.label }}</button>
+            }
+          </div>
+
+          <div class="settings-divider"></div>
+
+          <p class="section-title">Language</p>
+          <p class="section-desc">Set your preferred display language.</p>
+
+          <select class="field-input" [(ngModel)]="language" style="max-width: 280px;">
+            <option value="en">English (US)</option>
+            <option value="hi">हिन्दी (Hindi)</option>
+            <option value="ta">தமிழ் (Tamil)</option>
+          </select>
+        </div>
+
+        <div class="settings-card-footer">
+          <button class="btn-primary" [disabled]="saving()" (click)="saveAppearance()">
+            @if (saving()) {
+              <mat-spinner diameter="16"></mat-spinner>
+            }
+            Save Preferences
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- ══════════════════ ORGANIZATION (admin only) ══════════════════ -->
+    @if (activeTab() === 'organization') {
+      <h2 class="tab-heading">Organization</h2>
+      <p class="tab-desc">Company-wide settings and payroll configuration.</p>
+
+      <!-- Org Details -->
+      <div class="settings-card">
+        <div class="settings-card-body">
+          <p class="section-title">Organization Details</p>
+          <p class="section-desc">General information about your company.</p>
+
+          <div class="field-group">
+            <div class="field">
+              <label class="field-label">Organization Name</label>
+              <input type="text" class="field-input" [(ngModel)]="orgName" />
+            </div>
+            <div class="field">
+              <label class="field-label">Default Currency</label>
+              <select class="field-input" [(ngModel)]="orgCurrency">
+                <option value="INR">₹ INR — Indian Rupee</option>
+                <option value="USD">$ USD — US Dollar</option>
+                <option value="EUR">€ EUR — Euro</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payroll Config -->
+      <div class="settings-card">
+        <div class="settings-card-body">
+          <p class="section-title">Payroll Configuration</p>
+          <p class="section-desc">Define pay periods, overtime rules, and late policies.</p>
+
+          <div class="field-group" style="grid-template-columns: 1fr 1fr 1fr;">
+            <div class="field">
+              <label class="field-label">Pay Period</label>
+              <select class="field-input" [(ngModel)]="payPeriod">
+                <option value="weekly">Weekly</option>
+                <option value="biweekly">Bi-weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Overtime Multiplier</label>
+              <input type="number" step="0.1" min="1" class="field-input" [(ngModel)]="overtimeMultiplier" />
+            </div>
+            <div class="field">
+              <label class="field-label">Late Threshold (min)</label>
+              <input type="number" min="0" class="field-input" [(ngModel)]="lateMarkThreshold" />
+            </div>
+          </div>
+        </div>
+        <div class="settings-card-footer">
+          <button class="btn-primary" [disabled]="saving()" (click)="saveOrganization()">
+            @if (saving()) {
+              <mat-spinner diameter="16"></mat-spinner>
+            }
+            Save Settings
+          </button>
+        </div>
+      </div>
+    }
+
+  </div>
+</div>

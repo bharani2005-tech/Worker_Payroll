@@ -1,0 +1,200 @@
+<app-page-header
+  [title]="authService.isAdmin() ? 'Payroll' : 'My Payments'"
+  [subtitle]="authService.isAdmin() ? 'Generate payroll and track payment status' : 'Your payment history and pending balance'"
+>
+  <div class="flex items-center gap-2">
+    <button mat-stroked-button [matMenuTriggerFor]="exportMenu" class="!rounded-lg !font-semibold" [disabled]="exporting()">
+      <mat-icon>download</mat-icon>
+      Export
+    </button>
+    <mat-menu #exportMenu="matMenu">
+      <button mat-menu-item (click)="exportReport('csv')">Export as CSV</button>
+      <button mat-menu-item (click)="exportReport('excel')">Export as Excel</button>
+      <button mat-menu-item (click)="exportReport('pdf')">Export as PDF</button>
+    </mat-menu>
+
+    @if (authService.isAdmin()) {
+      <button mat-flat-button color="primary" class="!rounded-lg !font-semibold" (click)="openGenerateDialog()">
+        <mat-icon>add</mat-icon>
+        Generate Payroll
+      </button>
+    }
+  </div>
+</app-page-header>
+
+<!-- ── Summary KPI cards ────────────────────────────────────────────────── -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="rounded-2xl p-5 flex flex-col gap-3" style="background: white; border: 1px solid #e8ecf0;">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-medium uppercase tracking-wide" style="color:#94a3b8;">Total Due</span>
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#f0f9ff;">
+        <mat-icon style="font-size:16px;width:16px;height:16px;color:#0ea5e9;">account_balance_wallet</mat-icon>
+      </div>
+    </div>
+    <p class="font-display font-bold font-mono-num" style="font-size:24px;color:#0f172a;">₹{{ summary().totalDue | number: '1.0-0' }}</p>
+  </div>
+  <div class="rounded-2xl p-5 flex flex-col gap-3" style="background: white; border: 1px solid #e8ecf0;">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-medium uppercase tracking-wide" style="color:#94a3b8;">Total Paid</span>
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#f0fdf4;">
+        <mat-icon style="font-size:16px;width:16px;height:16px;color:#16a34a;">task_alt</mat-icon>
+      </div>
+    </div>
+    <p class="font-display font-bold font-mono-num" style="font-size:24px;color:#0f172a;">₹{{ summary().totalPaid | number: '1.0-0' }}</p>
+  </div>
+  <div class="rounded-2xl p-5 flex flex-col gap-3" style="background: white; border: 1px solid #e8ecf0;">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-medium uppercase tracking-wide" style="color:#94a3b8;">Pending</span>
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#fffbeb;">
+        <mat-icon style="font-size:16px;width:16px;height:16px;color:#f59e0b;">pending_actions</mat-icon>
+      </div>
+    </div>
+    <p class="font-display font-bold font-mono-num" style="font-size:24px;color:#0f172a;">₹{{ summary().totalPending | number: '1.0-0' }}</p>
+  </div>
+  <div class="rounded-2xl p-5 flex flex-col gap-3" style="background: white; border: 1px solid #e8ecf0;">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-medium uppercase tracking-wide" style="color:#94a3b8;">Records</span>
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#faf5ff;">
+        <mat-icon style="font-size:16px;width:16px;height:16px;color:#8b5cf6;">receipt_long</mat-icon>
+      </div>
+    </div>
+    <p class="font-display font-bold font-mono-num" style="font-size:24px;color:#0f172a;">{{ summary().count }}</p>
+  </div>
+</div>
+
+<!-- ── Filter bar ───────────────────────────────────────────────────────── -->
+<div class="flex items-center gap-2 mb-4">
+  @for (f of statusFilters; track f.value) {
+    <button
+      (click)="setStatusFilter(f.value)"
+      class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+      [style.background]="activeFilter() === f.value ? '#16a34a' : 'white'"
+      [style.color]="activeFilter() === f.value ? 'white' : '#64748b'"
+      [style.border]="activeFilter() === f.value ? '1px solid #16a34a' : '1px solid #e8ecf0'"
+      style="cursor:pointer;"
+    >{{ f.label }}</button>
+  }
+</div>
+
+<div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+  <div class="overflow-x-auto" style="overflow-y:auto;max-height:420px;">
+    <table class="w-full text-sm">
+      <thead style="position:sticky;top:0;z-index:2;">
+        <tr class="text-left text-xs text-slate-400 uppercase tracking-wide" style="border-bottom:2px solid #e2e8f0;box-shadow:0 2px 4px rgba(0,0,0,0.06);">
+          @if (authService.isAdmin()) {
+            <th class="px-4 py-3 font-medium bg-slate-50">Worker</th>
+          }
+          <th class="px-4 py-3 font-medium bg-slate-50">Period</th>
+          <th class="px-4 py-3 font-medium bg-slate-50">Payment Date</th>
+          <th class="px-4 py-3 font-medium text-right bg-slate-50">Due</th>
+          <th class="px-4 py-3 font-medium text-right bg-slate-50">Paid</th>
+          <th class="px-4 py-3 font-medium text-right bg-slate-50">Pending</th>
+          <th class="px-4 py-3 font-medium bg-slate-50">Method</th>
+          <th class="px-4 py-3 font-medium bg-slate-50">Status</th>
+          <th class="px-4 py-3 font-medium w-8 bg-slate-50"></th>
+          @if (authService.isAdmin()) {
+            <th class="px-4 py-3 font-medium text-right bg-slate-50">Actions</th>
+          }
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        @if (loading()) {
+          <tr><td [attr.colspan]="colCount()" class="px-4 py-8 text-center text-slate-400">Loading payments…</td></tr>
+        } @else {
+          @for (payment of filteredPayments(); track payment._id) {
+            <tr class="hover:bg-slate-50 cursor-pointer" (click)="toggleExpand(payment._id)">
+              @if (authService.isAdmin()) {
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white shrink-0" [style.background]="avatarColor(workerName(payment))">
+                      {{ initials(workerName(payment)) }}
+                    </div>
+                    <span class="text-slate-700 font-medium">{{ workerName(payment) }}</span>
+                  </div>
+                </td>
+              }
+              <td class="px-4 py-3 text-slate-600">{{ payment.periodStart | date: 'MMM d' }} – {{ payment.periodEnd | date: 'MMM d, y' }}</td>
+              <td class="px-4 py-3 text-slate-500">{{ payment.amountPaid > 0 ? (payment.paymentDate | date: 'MMM d, y') : '—' }}</td>
+              <td class="px-4 py-3 text-right font-mono-num text-slate-700">₹{{ payment.amountDue | number: '1.0-0' }}</td>
+              <td class="px-4 py-3 text-right font-mono-num text-slate-700">₹{{ payment.amountPaid | number: '1.0-0' }}</td>
+              <td class="px-4 py-3 text-right font-mono-num font-medium text-slate-900">₹{{ payment.pendingAmount | number: '1.0-0' }}</td>
+              <td class="px-4 py-3">
+                @if (payment.paymentMethod) {
+                  <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600">
+                    <mat-icon style="font-size:15px;width:15px;height:15px;color:#94a3b8;">{{ methodIcon(payment.paymentMethod) }}</mat-icon>
+                    {{ methodLabel(payment.paymentMethod) }}
+                  </span>
+                } @else {
+                  <span class="text-xs text-slate-300">—</span>
+                }
+              </td>
+              <td class="px-4 py-3">
+                <span
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium capitalize"
+                  [class.bg-green-100]="payment.status === 'paid'" [class.text-green-700]="payment.status === 'paid'"
+                  [class.bg-amber-100]="payment.status === 'partial'" [class.text-amber-700]="payment.status === 'partial'"
+                  [class.bg-red-100]="payment.status === 'unpaid'" [class.text-red-700]="payment.status === 'unpaid'"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full"
+                    [class.bg-green-500]="payment.status === 'paid'"
+                    [class.bg-amber-500]="payment.status === 'partial'"
+                    [class.bg-red-500]="payment.status === 'unpaid'"
+                  ></span>
+                  {{ payment.status }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-slate-300">
+                <mat-icon style="font-size:18px;width:18px;height:18px;transition: transform 0.15s ease;" [style.transform]="expandedId() === payment._id ? 'rotate(180deg)' : 'none'">expand_more</mat-icon>
+              </td>
+              @if (authService.isAdmin()) {
+                <td class="px-4 py-3 text-right" (click)="$event.stopPropagation()">
+                  <button mat-icon-button [matMenuTriggerFor]="rowMenu" class="text-slate-400">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                  <mat-menu #rowMenu="matMenu">
+                    @if (payment.status !== 'paid') {
+                      <button mat-menu-item (click)="openMarkPaymentDialog(payment)">
+                        <mat-icon>payments</mat-icon>
+                        <span>Record payment</span>
+                      </button>
+                    }
+                    <button mat-menu-item (click)="deletePayment(payment)">
+                      <mat-icon class="text-red-500">delete</mat-icon>
+                      <span class="text-red-500">Delete</span>
+                    </button>
+                  </mat-menu>
+                </td>
+              }
+            </tr>
+            @if (expandedId() === payment._id) {
+              <tr>
+                <td [attr.colspan]="colCount()" class="px-4 py-4 bg-slate-50">
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:#94a3b8;">Payment ID</p>
+                      <p class="text-sm font-mono-num text-slate-700">{{ payment._id.slice(-10) }}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:#94a3b8;">Created</p>
+                      <p class="text-sm text-slate-700">{{ payment.createdAt | date: 'MMM d, y, h:mm a' }}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:#94a3b8;">Payment Method</p>
+                      <p class="text-sm text-slate-700">{{ payment.paymentMethod ? methodLabel(payment.paymentMethod) : 'Not yet paid' }}</p>
+                    </div>
+                    <div class="sm:col-span-3">
+                      <p class="text-xs font-medium uppercase tracking-wide mb-1" style="color:#94a3b8;">Notes</p>
+                      <p class="text-sm text-slate-600">{{ payment.notes || 'No notes added for this payment.' }}</p>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            }
+          } @empty {
+            <tr><td [attr.colspan]="colCount()" class="px-4 py-8 text-center text-slate-400">No payment records found.</td></tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,0 +1,30 @@
+// Glassmorphism overrides for Material form fields sitting on the frosted card.
+// Material's outline appearance ships with a solid white field background by
+// default — these overrides make it transparent so the blurred photo behind
+// the card reads through consistently, while keeping the outline/label styling.
+
+::ng-deep .glass-field .mat-mdc-text-field-wrapper {
+    background-color: rgba(255, 255, 255, 0.45);
+    border-radius: 8px;
+}
+
+::ng-deep .glass-field .mdc-notched-outline__leading,
+::ng-deep .glass-field .mdc-notched-outline__notch,
+::ng-deep .glass-field .mdc-notched-outline__trailing {
+    border-color: rgba(15, 23, 42, 0.18) !important;
+}
+
+::ng-deep .glass-field:hover .mdc-notched-outline__leading,
+::ng-deep .glass-field:hover .mdc-notched-outline__notch,
+::ng-deep .glass-field:hover .mdc-notched-outline__trailing {
+    border-color: rgba(15, 23, 42, 0.32) !important;
+}
+
+::ng-deep .glass-field input.mat-mdc-input-element {
+    color: #0f172a;
+}
+
+::ng-deep .glass-field .mat-mdc-form-field-label,
+::ng-deep .glass-field .mdc-floating-label {
+    color: #475569 !important;
+}
