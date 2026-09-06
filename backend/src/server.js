@@ -15,7 +15,7 @@ const startServer = async () => {
 
   const io = new Server(server, {
     cors: {
-      origin: process.env.CLIENT_URL || 'http://localhost:4200',
+      origin: (process.env.CLIENT_URL || '').trim() || 'http://localhost:4200',
       credentials: true,
     },
   });

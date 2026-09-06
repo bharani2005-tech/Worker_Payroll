@@ -27,9 +27,11 @@ app.set('trust proxy', 1);
 app.use(helmet());
 
 // CORS - only allow the configured frontend origin, with credentials for cookies
+// Trim CLIENT_URL to guard against accidental whitespace/newline in env vars
+const allowedOrigin = (process.env.CLIENT_URL || '').trim() || 'http://localhost:4200';
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:4200',
+    origin: allowedOrigin,
     credentials: true,
   })
 );
