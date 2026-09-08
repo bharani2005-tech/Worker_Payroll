@@ -12,12 +12,16 @@ const { USER_STATUS, SALARY_TYPE } = require('../config/constants');
 const MAX_LOGIN_ATTEMPTS = Number(process.env.MAX_LOGIN_ATTEMPTS) || 5;
 const LOCK_TIME_MS = (Number(process.env.LOCK_TIME_MINUTES) || 15) * 60 * 1000;
 
-// FIX 1: Use 'lax' in dev so the refresh-token cookie is sent on cross-origin
-// requests (frontend :4200 → backend :5000). 'strict' silently blocks it.
+// Cookie strategy for cross-origin deployments (e.g. Vercel frontend → Render backend):
+//   production : sameSite='none' + secure=true  → browser sends cookie cross-site
+//   development: sameSite='lax'  + secure=false → works on localhost (same-site)
+//
+// SameSite='strict' in production silently blocks the cookie on cross-origin
+// requests, so the refresh endpoint never receives the token → 401.
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   path: '/api/auth',
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
@@ -199,7 +203,11 @@ const logout = asyncHandler(async (req, res) => {
       // Token already invalid/expired — nothing to clean up
     }
   }
-  res.clearCookie('refreshToken', { path: '/api/auth' });
+  // Must send same sameSite/secure flags as Set-Cookie for browser to honour deletion
+  res.clearCookie('refreshToken', {
+    ...REFRESH_COOKIE_OPTIONS,
+    maxAge: undefined, // let the browser expire it immediately
+  });
   res.status(200).json({ success: true, message: 'Logged out successfully.' });
 });
 

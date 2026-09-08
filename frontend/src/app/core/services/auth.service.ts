@@ -69,11 +69,19 @@ export class AuthService {
    * Attempts to restore a session on app bootstrap using the refresh-token
    * cookie: refresh the access token, then fetch the current user with it.
    * Resolves to true if a session was restored, false otherwise.
+   *
+   * A 401 here is expected for unauthenticated/new visitors (no cookie yet)
+   * and is handled silently — it does NOT indicate a bug.
    */
   bootstrap(): Observable<boolean> {
     return this.refreshAccessToken().pipe(
       switchMap(() => this.fetchCurrentUser()),
-      catchError(() => {
+      catchError((err) => {
+        // 401 = no valid refresh cookie (expected for guests/new sessions)
+        // Anything else is unexpected — log it for diagnostics
+        if (err?.status !== 401) {
+          console.warn('[AuthService] Unexpected bootstrap error:', err);
+        }
         this.setAccessToken(null);
         this.currentUserSignal.set(null);
         return of(false);
