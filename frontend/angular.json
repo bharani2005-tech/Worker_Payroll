@@ -58,9 +58,8 @@
                 }
               ],
               "outputHashing": "all",
-              "optimization": {
-                "fonts": false
-              }
+              "optimization": true,
+              "subresourceIntegrity": true
             },
             "development": {
               "optimization": false,

@@ -5,15 +5,41 @@
   <title>WorkerPay Pro</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="WorkerPay Pro — Track daily work, auto-calculate earnings, and manage payroll for your entire workforce.">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="icon" type="image/png" sizes="512x512" href="favicon.png">
   <link rel="apple-touch-icon" href="favicon.png">
+
+  <!-- Preconnect to font origins (kept render-critical) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <!-- Fonts loaded NON-render-blocking: load as print, swap to all on load -->
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        media="print" onload="this.media='all'">
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/icon?family=Material+Icons"
+        media="print" onload="this.media='all'">
+  <!-- Fallback for no-JS -->
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  </noscript>
 </head>
 <body>
-  <app-root></app-root>
+  <app-root>
+    <!-- Inline loading indicator — visible instantly, auto-removed when Angular bootstraps -->
+    <style>
+      .app-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#0b1120;gap:20px}
+      .app-loading .spinner{width:44px;height:44px;border:3px solid rgba(255,255,255,.1);border-top-color:#16a34a;border-radius:50%;animation:spin .7s linear infinite}
+      .app-loading p{color:rgba(255,255,255,.6);font-family:Inter,system-ui,sans-serif;font-size:14px;letter-spacing:.02em}
+      @keyframes spin{to{transform:rotate(360deg)}}
+    </style>
+    <div class="app-loading">
+      <div class="spinner"></div>
+      <p>Loading WorkerPay Pro…</p>
+    </div>
+  </app-root>
 </body>
 </html>
