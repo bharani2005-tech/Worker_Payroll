@@ -34,24 +34,17 @@ export const guestGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  // Fast path: if bootstrap already finished (APP_INITIALIZER resolved),
-  // decide immediately without waiting for any observable.
-  if (!authService.initializing()) {
-    if (!authService.isAuthenticated()) return true;
-    router.navigate([authService.isAdmin() ? '/admin' : '/worker']);
-    return false;
+  // If bootstrap is still running (e.g. backend cold-start on Render.com),
+  // let the user through immediately — they're navigating to login/register,
+  // so they're almost certainly a guest. No need to block for 30-60s.
+  if (authService.initializing()) {
+    return true;
   }
 
-  // Slower path: still initializing (should be rare after APP_INITIALIZER).
-  return toObservable(authService.initializing).pipe(
-    filter((init) => !init),
-    take(1),
-    map(() => {
-      if (!authService.isAuthenticated()) return true;
-      router.navigate([authService.isAdmin() ? '/admin' : '/worker']);
-      return false;
-    })
-  );
+  // Bootstrap finished — check if they're already logged in.
+  if (!authService.isAuthenticated()) return true;
+  router.navigate([authService.isAdmin() ? '/admin' : '/worker']);
+  return false;
 };
 
 export const adminGuard: CanActivateFn = () => {

@@ -11,15 +11,19 @@ import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { AuthService } from './core/services/auth.service';
 
 /**
- * Preloading strategy that waits 3 seconds after bootstrap
- * then loads lazy routes one at a time. This keeps the initial
- * load fast while still warming the cache for future navigation.
+ * Smart preloading strategy:
+ * - Routes tagged with `data: { preload: true }` load immediately
+ *   (e.g. auth routes — these are what landing-page visitors click first).
+ * - All other lazy routes load after a 3-second delay so they don't
+ *   compete with the initial render.
  */
 @Injectable({ providedIn: 'root' })
-class IdlePreloadStrategy implements PreloadingStrategy {
-  preload(_route: Route, loadFn: () => Observable<any>): Observable<any> {
-    // Delay preloading by 3s so it doesn't compete with the initial render
-    return timer(3000).pipe(mergeMap(() => loadFn()));
+class SmartPreloadStrategy implements PreloadingStrategy {
+  preload(route: Route, loadFn: () => Observable<any>): Observable<any> {
+    if (route.data?.['preload']) {
+      return loadFn();               // Preload immediately
+    }
+    return timer(3000).pipe(mergeMap(() => loadFn()));  // Deferred
   }
 }
 
@@ -28,6 +32,9 @@ class IdlePreloadStrategy implements PreloadingStrategy {
  * until the backend responds (Render.com cold-starts take 30-60s),
  * we start the bootstrap in the background and let the app render
  * immediately. Guards already handle the "still initializing" state.
+ *
+ * We also fire a lightweight health-check ping first to wake up
+ * the backend as early as possible.
  */
 function initAuthNonBlocking(authService: AuthService) {
   return () => {
@@ -42,7 +49,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes, withPreloading(IdlePreloadStrategy)),
+    provideRouter(routes, withPreloading(SmartPreloadStrategy)),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     provideAnimationsAsync(),
     provideCharts(withDefaultRegisterables()),

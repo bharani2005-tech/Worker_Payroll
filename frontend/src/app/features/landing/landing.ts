@@ -2,8 +2,6 @@ import { Component, ElementRef, OnDestroy, AfterViewInit, ViewChild } from '@ang
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import * as THREE from 'three';
-import { gsap } from 'gsap';
 
 @Component({
   selector: 'app-landing',
@@ -14,17 +12,28 @@ import { gsap } from 'gsap';
 export class LandingComponent implements AfterViewInit, OnDestroy {
   @ViewChild('sceneCanvas') canvasRef!: ElementRef<HTMLCanvasElement>;
 
-  private renderer?: THREE.WebGLRenderer;
-  private scene?: THREE.Scene;
-  private camera?: THREE.PerspectiveCamera;
-  private cards: THREE.Mesh[] = [];
+  private renderer?: any;
+  private scene?: any;
+  private camera?: any;
+  private cards: any[] = [];
   private animationFrameId?: number;
   private resizeObserver?: ResizeObserver;
 
   ngAfterViewInit(): void {
-    this.initScene();
-    this.animate();
+    // Load the 3D scene and hero animations asynchronously so the page
+    // renders instantly (text + buttons) without waiting for THREE.js (~600KB).
+    this.initSceneAsync();
+    this.initHeroAnimationAsync();
+  }
 
+  ngOnDestroy(): void {
+    if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
+    this.resizeObserver?.disconnect();
+    this.renderer?.dispose();
+  }
+
+  private async initHeroAnimationAsync(): Promise<void> {
+    const { gsap } = await import('gsap');
     gsap.from('.hero-fade', {
       opacity: 0,
       y: 24,
@@ -34,20 +43,14 @@ export class LandingComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  ngOnDestroy(): void {
-    if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
-    this.resizeObserver?.disconnect();
-    this.renderer?.dispose();
-  }
-
   /**
-   * Builds a "floating payslip stack" scene: a grid of thin glassy cards
-   * (representing individual worker payslips/records) gently rotating and
-   * drifting in 3D space. This stands in for the brief's literal "3D
-   * workforce globe" with an artifact more native to a payroll product.
+   * Dynamically loads THREE.js and builds a "floating payslip stack" scene:
+   * a grid of thin glassy cards gently rotating and drifting in 3D space.
    */
-  private initScene(): void {
-    const canvas = this.canvasRef.nativeElement;
+  private async initSceneAsync(): Promise<void> {
+    const THREE = await import('three');
+    const canvas = this.canvasRef?.nativeElement;
+    if (!canvas) return;
     const container = canvas.parentElement!;
 
     this.scene = new THREE.Scene();
@@ -106,6 +109,8 @@ export class LandingComponent implements AfterViewInit, OnDestroy {
 
     this.resizeObserver = new ResizeObserver(() => this.onResize());
     this.resizeObserver.observe(container);
+
+    this.animate();
   }
 
   private onResize(): void {
@@ -136,3 +141,4 @@ export class LandingComponent implements AfterViewInit, OnDestroy {
     this.renderer.render(this.scene, this.camera);
   };
 }
+
