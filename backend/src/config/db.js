@@ -19,6 +19,11 @@ const connectDB = async () => {
 
     const conn = await mongoose.connect(uri, {
       autoIndex: process.env.NODE_ENV !== 'production',
+      // Connection pool tuning for free-tier hosts (Render.com, etc.)
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      socketTimeoutMS: 45000,
+      serverSelectionTimeoutMS: 10000,
     });
 
     console.log(`[MongoDB] Connected: ${conn.connection.host}/${conn.connection.name}`);

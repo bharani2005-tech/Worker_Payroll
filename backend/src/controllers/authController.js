@@ -30,8 +30,10 @@ const issueTokens = async (res, user, rememberMe = false) => {
   const accessToken = signAccessToken(user);
   const refreshToken = signRefreshToken(user);
 
-  // Store only the hash of the refresh token, never the raw token
-  user.refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+  // Store only the hash of the refresh token, never the raw token.
+  // Refresh tokens are long random JWTs — 6 rounds is plenty secure
+  // and much faster than 10, shaving ~1-2s on free-tier hosts.
+  user.refreshTokenHash = await bcrypt.hash(refreshToken, 6);
   user.lastLoginAt = new Date();
   await user.save();
 
@@ -88,7 +90,8 @@ const register = asyncHandler(async (req, res) => {
     throw err;
   }
 
-  await writeAuditLog({
+  // Fire-and-forget: don't block the response for audit logging
+  writeAuditLog({
     action: 'USER_REGISTERED',
     entity: 'User',
     entityId: user._id,
@@ -134,7 +137,7 @@ const login = asyncHandler(async (req, res) => {
       user.lockUntil = new Date(Date.now() + LOCK_TIME_MS);
       user.loginAttempts = 0;
       await user.save();
-      await writeAuditLog({ action: 'ACCOUNT_LOCKED', entity: 'User', entityId: user._id, user: user._id, ipAddress: req.ip });
+      writeAuditLog({ action: 'ACCOUNT_LOCKED', entity: 'User', entityId: user._id, user: user._id, ipAddress: req.ip });
       throw new ApiError(423, `Too many failed attempts. Account locked for ${LOCK_TIME_MS / 60000} minutes.`);
     }
     await user.save();
@@ -148,7 +151,8 @@ const login = asyncHandler(async (req, res) => {
 
   const accessToken = await issueTokens(res, user, !!rememberMe);
 
-  await writeAuditLog({ action: 'USER_LOGIN', entity: 'User', entityId: user._id, user: user._id, ipAddress: req.ip });
+  // Fire-and-forget: don't block the response for audit logging
+  writeAuditLog({ action: 'USER_LOGIN', entity: 'User', entityId: user._id, user: user._id, ipAddress: req.ip });
 
   res.status(200).json({
     success: true,
@@ -280,7 +284,7 @@ const resetPassword = asyncHandler(async (req, res) => {
   user.lockUntil = null;
   await user.save();
 
-  await writeAuditLog({ action: 'PASSWORD_RESET', entity: 'User', entityId: user._id, user: user._id, ipAddress: req.ip });
+  writeAuditLog({ action: 'PASSWORD_RESET', entity: 'User', entityId: user._id, user: user._id, ipAddress: req.ip });
 
   res.status(200).json({ success: true, message: 'Password reset successfully. Please log in.' });
 });

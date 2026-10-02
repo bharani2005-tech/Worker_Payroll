@@ -1,7 +1,9 @@
-import { Component, ElementRef, OnDestroy, AfterViewInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, AfterViewInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-landing',
@@ -9,7 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
   imports: [CommonModule, RouterLink, MatButtonModule],
   templateUrl: './landing.html',
 })
-export class LandingComponent implements AfterViewInit, OnDestroy {
+export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('sceneCanvas') canvasRef!: ElementRef<HTMLCanvasElement>;
 
   private renderer?: any;
@@ -18,6 +20,18 @@ export class LandingComponent implements AfterViewInit, OnDestroy {
   private cards: any[] = [];
   private animationFrameId?: number;
   private resizeObserver?: ResizeObserver;
+
+  constructor(private http: HttpClient) {}
+
+  /**
+   * Wake up the backend immediately when the landing page loads.
+   * Render.com free-tier spins down after 15 min — this ping starts
+   * the cold boot so the server is ready by the time the user clicks
+   * "Sign In" or "Get Started".
+   */
+  ngOnInit(): void {
+    this.http.get(`${environment.apiUrl}/health`).subscribe({ error: () => {} });
+  }
 
   ngAfterViewInit(): void {
     // Load the 3D scene and hero animations asynchronously so the page
